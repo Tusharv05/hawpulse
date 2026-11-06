@@ -1,0 +1,20 @@
+$kind: http-request
+url: "{{baseUrl}}/api/v1/diary/{{pet_id}}/share-token"
+method: POST
+auth:
+  type: bearer
+  credentials:
+    token: "{{access_token}}"
+scripts:
+  - type: afterResponse
+    code: |-
+      if (pm.response.code === 200) {
+          var json = pm.response.json();
+          if (json.share_token) {
+              pm.collectionVariables.set('sitter_token', json.share_token);
+              pm.environment.set('sitter_token', json.share_token);
+              console.log('Saved sitter_token:', json.share_token);
+          }
+      }
+    language: text/javascript
+order: 3000

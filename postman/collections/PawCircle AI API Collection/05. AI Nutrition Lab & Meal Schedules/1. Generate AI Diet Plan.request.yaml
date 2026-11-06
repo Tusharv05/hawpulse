@@ -1,0 +1,18 @@
+$kind: http-request
+url: "{{baseUrl}}/api/v1/diet/generate"
+method: POST
+headers:
+  Content-Type: application/json
+body:
+  type: text
+  content: |-
+    {
+      "pet_id": "{{pet_id}}",
+      "custom_prompt": "High protein lean maintenance diet with allergy friendly ingredients",
+      "diet_preset": "Active Adult Maintenance"
+    }
+auth:
+  type: bearer
+  credentials:
+    token: "{{access_token}}"
+order: 1000

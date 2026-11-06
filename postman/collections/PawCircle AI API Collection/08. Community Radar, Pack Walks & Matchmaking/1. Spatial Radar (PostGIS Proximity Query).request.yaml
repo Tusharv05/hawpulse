@@ -1,0 +1,12 @@
+$kind: http-request
+url: "{{baseUrl}}/api/v1/community/radar?latitude=37.7749&longitude=-122.4194&radius_km=5.0"
+method: GET
+queryParams:
+  latitude: "37.7749"
+  longitude: "-122.4194"
+  radius_km: "5.0"
+auth:
+  type: bearer
+  credentials:
+    token: "{{access_token}}"
+order: 1000

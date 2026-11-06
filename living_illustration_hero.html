@@ -1,0 +1,1035 @@
+<!--
+================================================================================
+LIVING ILLUSTRATION HERO COMPONENT
+PawCircle Storybook Neo-Brutalist "Living Illustration"
+
+FFMPEG ASSET PREPARATION COMMANDS:
+1. WebM (VP9, silent, scale to 1280px wide, crf 34, target < 2 MB):
+   ffmpeg -i gemini_generated_video_1915a245.mp4 -an -vf scale=1280:-2 -c:v libvpx-vp9 -crf 34 -b:v 0 video.webm
+
+2. MP4 (H.264, silent, web-optimized +faststart, crf 26, target < 2 MB):
+   ffmpeg -i gemini_generated_video_1915a245.mp4 -an -vf scale=1280:-2 -c:v libx264 -crf 26 -preset slow -movflags +faststart video.mp4
+
+3. Poster Frame (Frame 60 / ~2.5s wide group-hug shot):
+   ffmpeg -i gemini_generated_video_1915a245.mp4 -frames:v 1 -vf "select=eq(n\,60)" poster.jpg
+
+TUNABLE VALUES LIST:
+- CROSSFADE_DURATION: 0.5s (500 ms double-video cross-dissolve window)
+- LOOP_FADE_FALLBACK: 0.3s (300 ms cream background dip if single-video fallback active)
+- OVERLAY_FADE_IN_DELAY: 2.0s (matches video camera pull-back wide shot)
+- SPARKLE_COUNT: 5 twinkling stars (2 gold, 2 coral, 1 blue)
+- BUTTERFLY_COUNT: 2 ambient SVG flight path butterflies + 1 cursor-tracking butterfly
+- SPIRAL_COUNT: 2 animated stroke-dashoffset wind curls
+- CLOUD_COUNT: 2 slow-drifting doodle clouds
+- PALETTE TOKENS:
+    --bg: #FFF8E7 (warm cream paper)
+    --ink: #1A1A1A (dark outline & typography)
+    --yel: #FFC83D (sunny butter yellow)
+    --coral: #FF6B57 (vibrant warm coral)
+    --pink: #FFDDD6 (soft blush pink)
+    --mint: #D8F2E4 (fresh mint green)
+    --blue: #DCE8FA (gentle sky blue)
+================================================================================
+-->
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PawCircle · Living Illustration Hero Component</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Quicksand:wght@500;600;700&display=swap"
+    rel="stylesheet">
+
+  <style>
+    /* =====================================================================
+       DESIGN SYSTEM & TOKENS
+       ===================================================================== */
+    :root {
+      --bg: #FFF8E7;
+      --card: #FFFFFF;
+      --ink: #1A1A1A;
+      --mut: #686358;
+      --yel: #FFC83D;
+      --coral: #FF6B57;
+      --pink: #FFDDD6;
+      --mint: #D8F2E4;
+      --blue: #DCE8FA;
+      --dk: #1A1A1A;
+
+      --f-display: 'Fredoka', cursive, system-ui, sans-serif;
+      --f-body: 'Quicksand', system-ui, sans-serif;
+    }
+
+    *,
+    *::before,
+    *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      background-color: var(--bg);
+      color: var(--ink);
+      font-family: var(--f-body);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      padding: 30px 16px;
+      overflow-x: hidden;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* Hero Demo Container */
+    .hero-section {
+      width: 100%;
+      max-width: 1280px;
+      margin: 0 auto;
+      display: grid;
+      grid-template-columns: 1fr 1.12fr;
+      gap: 48px;
+      align-items: center;
+      padding: 20px 0;
+    }
+
+    @media (max-width: 980px) {
+      .hero-section {
+        grid-template-columns: 1fr;
+        gap: 36px;
+        text-align: center;
+      }
+    }
+
+    /* Left Column: Storybook Typography */
+    .hero-content {
+      display: flex;
+      flex-direction: column;
+      gap: 18px;
+    }
+
+    .hero-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: var(--card);
+      border: 2px solid var(--ink);
+      border-radius: 999px;
+      padding: 6px 16px;
+      font-weight: 700;
+      font-size: 14px;
+      width: max-content;
+      box-shadow: 0 3px 0 var(--ink);
+    }
+
+    @media (max-width: 980px) {
+      .hero-badge {
+        margin: 0 auto;
+      }
+    }
+
+    .hero-badge .dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: #10B981;
+      display: inline-block;
+      animation: pcPulseDot 1.8s infinite;
+    }
+
+    @keyframes pcPulseDot {
+      0% {
+        transform: scale(0.9);
+        opacity: 0.8;
+      }
+
+      50% {
+        transform: scale(1.2);
+        opacity: 1;
+      }
+
+      100% {
+        transform: scale(0.9);
+        opacity: 0.8;
+      }
+    }
+
+    h1.hero-title {
+      font-family: var(--f-display);
+      font-size: clamp(44px, 6.8vw, 92px);
+      font-weight: 700;
+      line-height: 1.04;
+      letter-spacing: -0.02em;
+    }
+
+    h1.hero-title mark {
+      background: linear-gradient(transparent 58%, var(--yel) 58% 92%, transparent 92%);
+      color: inherit;
+      padding: 0 6px;
+      border-radius: 6px;
+    }
+
+    p.hero-lead {
+      font-size: clamp(17px, 1.8vw, 21px);
+      line-height: 1.5;
+      color: var(--mut);
+      font-weight: 600;
+      max-width: 520px;
+    }
+
+    @media (max-width: 980px) {
+      p.hero-lead {
+        margin: 0 auto;
+      }
+    }
+
+    .hero-actions {
+      display: flex;
+      gap: 16px;
+      flex-wrap: wrap;
+      margin-top: 10px;
+    }
+
+    @media (max-width: 980px) {
+      .hero-actions {
+        justify-content: center;
+      }
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      font-family: var(--f-display);
+      font-weight: 600;
+      font-size: 17px;
+      padding: 16px 30px;
+      border-radius: 999px;
+      border: 3px solid var(--ink);
+      background: var(--yel);
+      color: var(--ink);
+      box-shadow: 0 5px 0 var(--ink);
+      cursor: pointer;
+      text-decoration: none;
+      transition: transform 0.15s ease, box-shadow 0.15s ease, background 0.15s ease;
+    }
+
+    .btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 7px 0 var(--ink);
+    }
+
+    .btn:active {
+      transform: translateY(3px);
+      box-shadow: 0 2px 0 var(--ink);
+    }
+
+    .btn.secondary {
+      background: transparent;
+      box-shadow: 0 5px 0 var(--ink);
+    }
+
+    /* =====================================================================
+       LIVING ILLUSTRATION COMPONENT (HERO RIGHT COLUMN)
+       ===================================================================== */
+    .living-hero-stage {
+      position: relative;
+      width: 100%;
+      max-width: 680px;
+      margin: 0 auto;
+    }
+
+    /* 16:9 Borderless Living Frame */
+    .living-frame {
+      position: relative;
+      width: 100%;
+      aspect-ratio: 16 / 9;
+      background-color: transparent;
+      border: none !important;
+      border-radius: 0 !important;
+      box-shadow: none !important;
+      outline: none !important;
+      overflow: visible;
+      cursor: pointer;
+      user-select: none;
+      transition: none;
+    }
+
+    .living-frame:hover {
+      transform: none;
+      box-shadow: none !important;
+    }
+
+    .living-video-canvas {
+      width: 100%;
+      height: auto;
+      aspect-ratio: 16 / 9;
+      display: block;
+      background: #FFF8E7;
+      border: none !important;
+      outline: none !important;
+      box-shadow: none !important;
+      border-radius: 0 !important;
+      -webkit-mask-image: radial-gradient(ellipse 96% 92% at 50% 50%, black 80%, transparent 100%);
+      mask-image: radial-gradient(ellipse 96% 92% at 50% 50%, black 80%, transparent 100%);
+    }
+
+    .video-a {
+      opacity: 1;
+      z-index: 1;
+    }
+
+    .video-b {
+      opacity: 0;
+      z-index: 2;
+    }
+
+    /* Fallback Poster (when reduced-motion, save-data, or loading) */
+    .living-poster {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: none;
+      z-index: 3;
+    }
+
+    .show-poster .living-poster {
+      display: block;
+    }
+
+    /* =====================================================================
+       LIVE OVERLAYS (SVG LAYER ABOVE VIDEO)
+       ===================================================================== */
+    .living-overlay-svg {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      z-index: 5;
+      overflow: visible;
+      opacity: 0;
+      animation: pcOverlayEntrance 1s ease-out 1.8s forwards;
+    }
+
+    @keyframes pcOverlayEntrance {
+      to {
+        opacity: 1;
+      }
+    }
+
+    /* 1. Flying Looping Butterflies */
+    .anim-butterfly-1 {
+      animation: pcFlyLoop1 8s ease-in-out infinite;
+      transform-origin: center;
+    }
+
+    .anim-butterfly-2 {
+      animation: pcFlyLoop2 10s ease-in-out infinite;
+      transform-origin: center;
+      animation-delay: -3.5s;
+    }
+
+    @keyframes pcFlyLoop1 {
+      0% {
+        transform: translate(120px, 60px) rotate(-10deg);
+      }
+
+      25% {
+        transform: translate(160px, 40px) rotate(15deg);
+      }
+
+      50% {
+        transform: translate(210px, 75px) rotate(-8deg);
+      }
+
+      75% {
+        transform: translate(150px, 90px) rotate(-22deg);
+      }
+
+      100% {
+        transform: translate(120px, 60px) rotate(-10deg);
+      }
+    }
+
+    @keyframes pcFlyLoop2 {
+      0% {
+        transform: translate(1050px, 70px) rotate(12deg);
+      }
+
+      30% {
+        transform: translate(990px, 45px) rotate(-16deg);
+      }
+
+      60% {
+        transform: translate(1080px, 95px) rotate(20deg);
+      }
+
+      85% {
+        transform: translate(1120px, 50px) rotate(-5deg);
+      }
+
+      100% {
+        transform: translate(1050px, 70px) rotate(12deg);
+      }
+    }
+
+    .bf-wing-l,
+    .bf-wing-r {
+      transform-box: fill-box;
+      transform-origin: center;
+      animation: pcFlap 0.28s ease-in-out infinite alternate;
+    }
+
+    .bf-wing-r {
+      animation-direction: alternate-reverse;
+    }
+
+    @keyframes pcFlap {
+      0% {
+        transform: scaleX(1);
+      }
+
+      100% {
+        transform: scaleX(0.22);
+      }
+    }
+
+    /* 2. Twinkling Sparkles */
+    .anim-sparkle {
+      transform-box: fill-box;
+      transform-origin: center;
+      animation: pcSparkleTwinkle 2.4s ease-in-out infinite;
+    }
+
+    .sp-1 {
+      animation-delay: 0s;
+    }
+
+    .sp-2 {
+      animation-delay: 0.6s;
+    }
+
+    .sp-3 {
+      animation-delay: 1.2s;
+    }
+
+    .sp-4 {
+      animation-delay: 1.8s;
+    }
+
+    .sp-5 {
+      animation-delay: 0.9s;
+    }
+
+    @keyframes pcSparkleTwinkle {
+
+      0%,
+      100% {
+        transform: scale(0.65) rotate(0deg);
+        opacity: 0.4;
+      }
+
+      50% {
+        transform: scale(1.3) rotate(45deg);
+        opacity: 1;
+      }
+    }
+
+    /* 3. Pink Spirals Drawing on/off with stroke-dashoffset */
+    .anim-spiral {
+      stroke-dasharray: 120;
+      stroke-dashoffset: 120;
+      animation: pcSpiralDraw 5s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+    }
+
+    .spiral-2 {
+      animation-delay: -2.5s;
+    }
+
+    @keyframes pcSpiralDraw {
+      0% {
+        stroke-dashoffset: 120;
+        opacity: 0;
+      }
+
+      20% {
+        opacity: 1;
+      }
+
+      60% {
+        stroke-dashoffset: 0;
+        opacity: 1;
+      }
+
+      85% {
+        stroke-dashoffset: -120;
+        opacity: 0.8;
+      }
+
+      100% {
+        stroke-dashoffset: -120;
+        opacity: 0;
+      }
+    }
+
+    /* 4. Slow Drifting Clouds */
+    .anim-cloud-1 {
+      animation: pcCloudDrift1 26s linear infinite;
+    }
+
+    .anim-cloud-2 {
+      animation: pcCloudDrift2 32s linear infinite;
+      animation-delay: -14s;
+    }
+
+    @keyframes pcCloudDrift1 {
+      0% {
+        transform: translateX(0);
+      }
+
+      50% {
+        transform: translateX(35px);
+      }
+
+      100% {
+        transform: translateX(0);
+      }
+    }
+
+    @keyframes pcCloudDrift2 {
+      0% {
+        transform: translateX(0);
+      }
+
+      50% {
+        transform: translateX(-30px);
+      }
+
+      100% {
+        transform: translateX(0);
+      }
+    }
+
+    /* =====================================================================
+       INTERACTIVE FLOATING HEART ON TAP/CLICK
+       ===================================================================== */
+    .pop-heart {
+      position: absolute;
+      pointer-events: none;
+      z-index: 25;
+      font-size: 26px;
+      user-select: none;
+      animation: pcPopHeart 1.2s cubic-bezier(0.2, 0.8, 0.3, 1) forwards;
+    }
+
+    @keyframes pcPopHeart {
+      0% {
+        opacity: 1;
+        transform: translate(-50%, -50%) scale(0.5) rotate(0deg);
+      }
+
+      50% {
+        opacity: 0.95;
+        transform: translate(calc(-50% + 12px), calc(-50% - 46px)) scale(1.35) rotate(-14deg);
+      }
+
+      100% {
+        opacity: 0;
+        transform: translate(calc(-50% + 22px), calc(-50% - 90px)) scale(1) rotate(16deg);
+      }
+    }
+
+    /* =====================================================================
+       DESKTOP CURSOR BUTTERFLY FOLLOWER
+       ===================================================================== */
+    .cursor-butterfly {
+      display: none;
+    }
+
+    @media (hover: hover) and (pointer: fine) {
+      .cursor-butterfly {
+        display: block;
+        position: absolute;
+        width: 48px;
+        height: 42px;
+        pointer-events: none;
+        z-index: 20;
+        opacity: 0;
+        transition: opacity 0.35s ease;
+        transform: translate(-100px, -100px);
+      }
+
+      .cursor-butterfly.active {
+        opacity: 1;
+      }
+    }
+
+
+
+    /* =====================================================================
+       FLOATING STORYBOOK CHIPS (OVERLAPPING HERO FRAME)
+       ===================================================================== */
+    .hero-chip {
+      position: absolute;
+      background: #FFFFFF;
+      color: var(--ink);
+      border: 2.5px solid var(--ink);
+      box-shadow: 0 4px 0 var(--ink);
+      border-radius: 999px;
+      padding: 9px 18px;
+      font-family: var(--f-display);
+      font-weight: 600;
+      font-size: 15px;
+      animation: pcChipBob 4s ease-in-out infinite;
+      white-space: nowrap;
+      z-index: 8;
+      pointer-events: auto;
+    }
+
+    .chip-1 {
+      top: -12px;
+      left: -16px;
+      animation-delay: 0s;
+    }
+
+    .chip-2 {
+      top: 48%;
+      right: -24px;
+      animation-delay: -1.3s;
+    }
+
+    .chip-3 {
+      bottom: -16px;
+      left: 28px;
+      animation-delay: -2.6s;
+    }
+
+    @keyframes pcChipBob {
+
+      0%,
+      100% {
+        transform: translateY(0) rotate(0deg);
+      }
+
+      50% {
+        transform: translateY(-10px) rotate(1.8deg);
+      }
+    }
+
+    @media (max-width: 600px) {
+      .hero-chip {
+        font-size: 13px;
+        padding: 6px 12px;
+      }
+
+      .chip-1 {
+        top: -8px;
+        left: -6px;
+      }
+
+      .chip-2 {
+        right: -8px;
+      }
+
+      .chip-3 {
+        bottom: -10px;
+        left: 10px;
+      }
+    }
+
+    /* =====================================================================
+       ACCESSIBILITY & PREFERS-REDUCED-MOTION
+       ===================================================================== */
+    @media (prefers-reduced-motion: reduce) {
+
+      .living-overlay-svg,
+      .anim-butterfly-1,
+      .anim-butterfly-2,
+      .bf-wing-l,
+      .bf-wing-r,
+      .anim-sparkle,
+      .anim-spiral,
+      .anim-cloud-1,
+      .anim-cloud-2,
+      .hero-chip,
+      .cursor-butterfly {
+        animation: none !important;
+        transition: none !important;
+      }
+
+      .living-frame {
+        transform: none !important;
+      }
+    }
+  </style>
+</head>
+
+<body>
+
+  <!-- =====================================================================
+       HERO DEMO CONTAINER
+       ===================================================================== -->
+  <section class="hero-section">
+    <!-- Left Column: Storybook Headline & CTAs -->
+    <div class="hero-content">
+      <div class="hero-badge">
+        <span class="dot"></span>
+        <span>For dogs, cats &amp; their humans</span>
+      </div>
+
+      <h1 class="hero-title">
+        Your pet’s<br />
+        whole world,<br />
+        in <mark>one circle.</mark>
+      </h1>
+
+      <p class="hero-lead">
+        AI meal plans, a one-tap daily diary, vet papers decoded in plain English, and warm playdates nearby.
+      </p>
+
+      <div class="hero-actions">
+        <button class="btn" type="button" onclick="alert('Profile creator opened!')">
+          Create pet profile 🐾
+        </button>
+        <button class="btn secondary" type="button" onclick="alert('Exploring routines...')">
+          See how it works ↓
+        </button>
+      </div>
+    </div>
+
+    <!-- Right Column: Living Illustration Component -->
+    <div class="living-hero-stage">
+      <div id="livingFrame" class="living-frame" role="region"
+        aria-label="A girl laughing while a cat, a spotted dog, a pink-eared dog and a yellow dog cuddle her in a garden.">
+        <!-- Canvas Rendering with Exact #FFF8E7 Yellow Background -->
+        <canvas id="heroCanvas" width="1280" height="720" class="living-video-canvas"></canvas>
+        <video id="videoA" src="video.mp4" autoplay muted playsinline loop style="display:none"></video>
+
+        <!-- Live SVG Overlay Layer (Extra Doodles in Storybook Ink Style) -->
+        <svg class="living-overlay-svg" viewBox="0 0 1280 720" preserveAspectRatio="xMidYMid meet" aria-hidden="true">
+          <defs>
+            <!-- Reusable Hand-drawn Sparkle Symbol -->
+            <g id="sparkle-sym">
+              <path d="M 0 -18 Q 0 0 -18 0 Q 0 0 0 18 Q 0 0 18 0 Q 0 0 0 -18 Z" fill="currentColor" />
+            </g>
+
+            <!-- Reusable Blue Doodle Cloud Symbol with Yellow #FFF8E7 Fill -->
+            <g id="cloud-sym">
+              <g stroke="#2B5288" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round" fill="#FFF8E7">
+                <path d="M 14 50 C 26 44, 46 42, 58 43 C 56 25, 74 12, 88 15 C 97 17, 96 28, 89 30 C 82 32, 81 23, 88 20 C 97 16, 111 16, 119 23 C 125 27, 121 35, 115 36 C 112 36, 113 29, 119 27 C 126 25, 136 30, 138 39 C 140 47, 131 51, 119 52 L 95 52 C 85 52, 83 47, 91 47 C 100 47, 98 53, 88 54 L 14 50 Z" />
+              </g>
+            </g>
+          </defs>
+
+          <!-- 2 Slow Drifting Blue Doodle Clouds in Sky with Yellow #FFF8E7 Interior -->
+          <g class="anim-cloud-1" transform="translate(140, 20)">
+            <use href="#cloud-sym" transform="scale(1.2)" />
+          </g>
+          <g class="anim-cloud-2" transform="translate(940, 30)">
+            <use href="#cloud-sym" transform="scale(1.05)" />
+          </g>
+
+          <!-- Completed Second Doodle Cloud (top right sky connecting towards butterfly) -->
+          <g transform="translate(820, 18)">
+            <g stroke="#2B5288" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round" fill="#FFF8E7">
+              <path d="M 10 38 L 260 38" />
+              <path d="M 12 38 C 18 24, 34 14, 48 16 C 58 18, 56 30, 46 31 C 39 32, 38 21, 49 18 C 62 13, 80 13, 90 22 C 96 28, 92 36, 84 35 C 79 34, 80 25, 88 23 C 100 19, 116 20, 126 29 C 132 35, 127 43, 118 42 C 113 41, 114 32, 124 30 C 136 26, 154 27, 164 36 C 172 43, 190 35, 204 32 C 218 30, 236 32, 248 35 C 254 36, 258 37, 260 38" />
+            </g>
+          </g>
+
+          <!-- 2 Pink/Red Spirals with Animated Stroke Dashoffset -->
+          <g transform="translate(860, 60)">
+            <path class="anim-spiral spiral-1"
+              d="M 0 0 C 14 -12, 34 2, 28 20 C 22 36, -2 32, -6 14 C -10 -2, 10 -16, 26 -8" fill="none" stroke="#FF6B57"
+              stroke-width="3.5" stroke-linecap="round" />
+          </g>
+
+          <g transform="translate(260, 110)">
+            <path class="anim-spiral spiral-2" d="M 0 0 C 12 -10, 30 2, 24 18 C 18 32, -2 28, -5 12" fill="none"
+              stroke="#FFA3BC" stroke-width="3" stroke-linecap="round" />
+          </g>
+
+          <!-- 5 Twinkling Star Sparkles -->
+          <g class="anim-sparkle sp-1" style="color: #FFC83D;" transform="translate(360, 65)">
+            <use href="#sparkle-sym" />
+          </g>
+          <g class="anim-sparkle sp-2" style="color: #FF6B57;" transform="translate(740, 50)">
+            <use href="#sparkle-sym" transform="scale(0.85)" />
+          </g>
+          <g class="anim-sparkle sp-3" style="color: #DCE8FA;" transform="translate(220, 80)">
+            <use href="#sparkle-sym" transform="scale(0.75)" />
+          </g>
+          <g class="anim-sparkle sp-4" style="color: #FFC83D;" transform="translate(1080, 110)">
+            <use href="#sparkle-sym" transform="scale(1.1)" />
+          </g>
+          <g class="anim-sparkle sp-5" style="color: #FF6B57;" transform="translate(640, 35)">
+            <use href="#sparkle-sym" transform="scale(0.8)" />
+          </g>
+
+          <!-- 2 Flying Looping Butterflies -->
+          <!-- Butterfly 1 (Yellow) -->
+          <g class="anim-butterfly-1">
+            <g class="bf-wing-l">
+              <ellipse cx="-10" cy="-6" rx="12" ry="16" fill="#FFC83D" stroke="#1A1A1A" stroke-width="2.5"
+                transform="rotate(-25 -10 -6)" />
+            </g>
+            <g class="bf-wing-r">
+              <ellipse cx="10" cy="-6" rx="12" ry="16" fill="#FFC83D" stroke="#1A1A1A" stroke-width="2.5"
+                transform="rotate(25 10 -6)" />
+            </g>
+            <line x1="0" y1="-14" x2="0" y2="10" stroke="#1A1A1A" stroke-width="3" stroke-linecap="round" />
+          </g>
+
+          <!-- Butterfly 2 (Coral / Pink) -->
+          <g class="anim-butterfly-2">
+            <g class="bf-wing-l">
+              <ellipse cx="-9" cy="-5" rx="10" ry="14" fill="#FF6B57" stroke="#1A1A1A" stroke-width="2.5"
+                transform="rotate(-25 -9 -5)" />
+            </g>
+            <g class="bf-wing-r">
+              <ellipse cx="9" cy="-5" rx="10" ry="14" fill="#FF6B57" stroke="#1A1A1A" stroke-width="2.5"
+                transform="rotate(25 9 -5)" />
+            </g>
+            <line x1="0" y1="-12" x2="0" y2="8" stroke="#1A1A1A" stroke-width="2.5" stroke-linecap="round" />
+          </g>
+        </svg>
+
+        <!-- Desktop Cursor Follower Butterfly -->
+        <div id="cursorButterfly" class="cursor-butterfly" aria-hidden="true">
+          <svg viewBox="0 0 50 42" width="100%" height="100%">
+            <ellipse class="bf-wing-l" cx="16" cy="18" rx="12" ry="16" fill="#9DBEF0" stroke="#1A1A1A"
+              stroke-width="2.5" transform="rotate(-25 16 18)" />
+            <ellipse class="bf-wing-r" cx="34" cy="18" rx="12" ry="16" fill="#9DBEF0" stroke="#1A1A1A"
+              stroke-width="2.5" transform="rotate(25 34 18)" />
+            <line x1="25" y1="8" x2="25" y2="30" stroke="#1A1A1A" stroke-width="3" stroke-linecap="round" />
+          </svg>
+        </div>
+
+      </div>
+
+
+    </div>
+  </section>
+
+  <!-- =====================================================================
+       SCRIPT: SEAMLESS LOOP CROSSFADE, INTERACTIONS, & ACCESSIBILITY
+       ===================================================================== -->
+  <script>
+    (function () {
+      'use strict';
+      const frameEl = document.getElementById('livingFrame');
+      const canvas = document.getElementById('heroCanvas');
+      const videoA = document.getElementById('videoA');
+      const cursorBf = document.getElementById('cursorButterfly');
+      const ctx = canvas ? canvas.getContext('2d', { alpha: false }) : null;
+
+      let isVisible = true;
+
+      if (ctx) {
+        const poster = new Image();
+        poster.src = 'poster.jpg';
+        let posterLoaded = false;
+        poster.onload = () => {
+          posterLoaded = true;
+          ctx.drawImage(poster, 0, 0, canvas.width, canvas.height);
+        };
+
+        videoA.loop = false;
+        videoA.muted = true;
+
+        const playOnce = () => {
+          if (videoA.ended) videoA.currentTime = 0;
+          videoA.play().catch(() => {
+            const onFirstTouch = () => {
+              videoA.play().catch(() => { });
+              window.removeEventListener('pointerdown', onFirstTouch);
+              window.removeEventListener('scroll', onFirstTouch);
+            };
+            window.addEventListener('pointerdown', onFirstTouch, { once: true });
+            window.addEventListener('scroll', onFirstTouch, { once: true });
+          });
+        };
+
+        // Play ONCE on load / refresh
+        playOnce();
+
+        // Play ONCE on scroll
+        let scrollTimer = null;
+        let lastScrollY = window.scrollY;
+        window.addEventListener('scroll', () => {
+          const currentY = window.scrollY;
+          if (Math.abs(currentY - lastScrollY) > 20) {
+            lastScrollY = currentY;
+            if (frameEl) {
+              const rect = frameEl.getBoundingClientRect();
+              if (rect.top < window.innerHeight && rect.bottom > 0) {
+                if (scrollTimer) clearTimeout(scrollTimer);
+                scrollTimer = setTimeout(() => {
+                  if (videoA.paused || videoA.ended) {
+                    videoA.currentTime = 0;
+                    videoA.play().catch(() => { });
+                  }
+                }, 120);
+              }
+            }
+          }
+        }, { passive: true });
+
+        function render() {
+          if (isVisible) {
+            if (videoA.readyState >= 2) {
+              ctx.globalCompositeOperation = 'source-over';
+              ctx.fillStyle = '#FFF8E7';
+              ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+              ctx.globalCompositeOperation = 'multiply';
+              ctx.drawImage(videoA, 0, 0, canvas.width, canvas.height);
+
+              // Feather edges & corners
+              ctx.globalCompositeOperation = 'source-over';
+
+              const gLeft = ctx.createLinearGradient(0, 0, 50, 0);
+              gLeft.addColorStop(0, '#FFF8E7');
+              gLeft.addColorStop(1, 'rgba(255, 248, 231, 0)');
+              ctx.fillStyle = gLeft;
+              ctx.fillRect(0, 0, 50, canvas.height);
+
+              const gRight = ctx.createLinearGradient(canvas.width - 50, 0, canvas.width, 0);
+              gRight.addColorStop(0, 'rgba(255, 248, 231, 0)');
+              gRight.addColorStop(1, '#FFF8E7');
+              ctx.fillStyle = gRight;
+              ctx.fillRect(canvas.width - 50, 0, 50, canvas.height);
+
+              const gBottom = ctx.createLinearGradient(0, canvas.height - 45, 0, canvas.height);
+              gBottom.addColorStop(0, 'rgba(255, 248, 231, 0)');
+              gBottom.addColorStop(1, '#FFF8E7');
+              ctx.fillStyle = gBottom;
+              ctx.fillRect(0, canvas.height - 45, canvas.width, 45);
+
+              const gTop = ctx.createLinearGradient(0, 0, 0, 35);
+              gTop.addColorStop(0, '#FFF8E7');
+              gTop.addColorStop(1, 'rgba(255, 248, 231, 0)');
+              ctx.fillStyle = gTop;
+              ctx.fillRect(0, 0, canvas.width, 35);
+            } else if (posterLoaded) {
+              ctx.drawImage(poster, 0, 0, canvas.width, canvas.height);
+            }
+          }
+          requestAnimationFrame(render);
+        }
+        requestAnimationFrame(render);
+      }
+
+      // -----------------------------------------------------------------
+      // 3. INTERACTIVE TAP / CLICK POPPING HEARTS
+      // -----------------------------------------------------------------
+      const HEART_EMOJIS = ['🧡', '✨', '🐾', '💖', '⭐', '❤️'];
+
+      frameEl.addEventListener('pointerdown', (e) => {
+        // Ignore if clicking the control button
+        if (e.target.closest('#playPauseBtn')) return;
+
+        const rect = frameEl.getBoundingClientRect();
+        const x = e.clientX - rect.left;
+        const y = e.clientY - rect.top;
+
+        createPopHeart(x, y);
+      });
+
+      function createPopHeart(x, y) {
+        const heart = document.createElement('div');
+        heart.className = 'pop-heart';
+        const randomEmoji = HEART_EMOJIS[Math.floor(Math.random() * HEART_EMOJIS.length)];
+        heart.textContent = randomEmoji;
+        heart.style.left = `${x}px`;
+        heart.style.top = `${y}px`;
+
+        frameEl.appendChild(heart);
+
+        setTimeout(() => {
+          heart.remove();
+        }, 1200);
+      }
+
+      // -----------------------------------------------------------------
+      // 4. DESKTOP CURSOR BUTTERFLY FOLLOWER
+      // -----------------------------------------------------------------
+      if (cursorBf && window.matchMedia('(hover: hover) and (pointer: fine)').matches) {
+        let mouseX = -100, mouseY = -100;
+        let bfX = -100, bfY = -100;
+        let isInside = false;
+
+        frameEl.addEventListener('mouseenter', () => {
+          isInside = true;
+          cursorBf.classList.add('active');
+        });
+
+        frameEl.addEventListener('mouseleave', () => {
+          isInside = false;
+          cursorBf.classList.remove('active');
+        });
+
+        frameEl.addEventListener('mousemove', (e) => {
+          const rect = frameEl.getBoundingClientRect();
+          mouseX = e.clientX - rect.left;
+          mouseY = e.clientY - rect.top;
+        });
+
+        function animateCursorButterfly() {
+          if (isInside) {
+            // Smooth lag interpolation
+            bfX += (mouseX - bfX) * 0.12;
+            bfY += (mouseY - bfY) * 0.12;
+            const deltaX = mouseX - bfX;
+            const tilt = Math.max(-25, Math.min(25, deltaX * 1.5));
+
+            cursorBf.style.transform = `translate(${bfX - 24}px, ${bfY - 21}px) rotate(${tilt}deg)`;
+          }
+          requestAnimationFrame(animateCursorButterfly);
+        }
+        requestAnimationFrame(animateCursorButterfly);
+      }
+
+      // -----------------------------------------------------------------
+      // 5. PERFORMANCE: INTERSECTION OBSERVER & TAB VISIBILITY
+      // -----------------------------------------------------------------
+      // Pause video when scrolled out of view
+      const observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+          if (!entry.isIntersecting) {
+            if (!currentVideo.paused) currentVideo.pause();
+          } else {
+            if (!isUserPaused && !isReducedMotion && !isSaveData) {
+              currentVideo.play().catch(() => { });
+            }
+          }
+        });
+      }, { threshold: 0.2 });
+
+      observer.observe(frameEl);
+
+      // Pause video when browser tab is inactive / hidden
+      document.addEventListener('visibilitychange', () => {
+        if (document.hidden) {
+          currentVideo.pause();
+          nextVideo.pause();
+        } else {
+          if (!isUserPaused && !isReducedMotion && !isSaveData) {
+            currentVideo.play().catch(() => { });
+          }
+        }
+      });
+
+    })();
+  </script>
+</body>
+
+</html>

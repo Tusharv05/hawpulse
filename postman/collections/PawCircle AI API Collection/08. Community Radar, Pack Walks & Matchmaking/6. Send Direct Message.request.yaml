@@ -1,0 +1,17 @@
+$kind: http-request
+url: "{{baseUrl}}/api/v1/community/messages"
+method: POST
+headers:
+  Content-Type: application/json
+body:
+  type: text
+  content: |-
+    {
+      "recipient_id": "SAMPLE_USER_ID",
+      "message": "Hi! Saw Cooper and Buster match. Would love to join the pack walk!"
+    }
+auth:
+  type: bearer
+  credentials:
+    token: "{{access_token}}"
+order: 6000

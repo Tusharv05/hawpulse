@@ -1,0 +1,11 @@
+$kind: collection
+description: Comprehensive Postman API Collection for PawCircle Pet Platform (FastAPI + Neon PostgreSQL + PostGIS + AI Vision & Triage)
+variables:
+  baseUrl: http://localhost:8000
+  access_token: ""
+  pet_id: ""
+  user_id: ""
+  prescription_id: ""
+  event_id: ""
+  sitter_token: ""
+  other_user_id: ""

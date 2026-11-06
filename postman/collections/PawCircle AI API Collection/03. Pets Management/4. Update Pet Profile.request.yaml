@@ -1,0 +1,17 @@
+$kind: http-request
+url: "{{baseUrl}}/api/v1/pets/{{pet_id}}"
+method: PUT
+headers:
+  Content-Type: application/json
+body:
+  type: text
+  content: |-
+    {
+      "weight_kg": 29.0,
+      "energy_level": "very_high"
+    }
+auth:
+  type: bearer
+  credentials:
+    token: "{{access_token}}"
+order: 4000

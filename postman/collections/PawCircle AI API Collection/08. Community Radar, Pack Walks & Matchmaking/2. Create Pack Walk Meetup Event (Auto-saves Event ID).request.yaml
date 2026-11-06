@@ -1,0 +1,35 @@
+$kind: http-request
+url: "{{baseUrl}}/api/v1/community/events"
+method: POST
+headers:
+  Content-Type: application/json
+body:
+  type: text
+  content: |-
+    {
+      "title": "Saturday Morning Golden Gate Pack Walk",
+      "description": "Friendly social pack walk for playful dogs with verified rabies vaccines.",
+      "location_name": "Dolores Park Dog Run",
+      "latitude": 37.7596,
+      "longitude": -122.4269,
+      "event_time": "2026-10-25T10:00:00Z",
+      "max_attendees": 12,
+      "requires_verified_vax": true
+    }
+auth:
+  type: bearer
+  credentials:
+    token: "{{access_token}}"
+scripts:
+  - type: afterResponse
+    code: |-
+      if (pm.response.code === 201 || pm.response.code === 200) {
+          var json = pm.response.json();
+          if (json.id) {
+              pm.collectionVariables.set('event_id', json.id);
+              pm.environment.set('event_id', json.id);
+              console.log('Saved event_id:', json.id);
+          }
+      }
+    language: text/javascript
+order: 2000

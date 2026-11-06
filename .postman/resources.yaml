@@ -1,0 +1,13 @@
+# Use this workspace to collaborate
+workspace:
+  id: c129843b-8257-4395-830d-d3beaaaa88e2
+
+localResources:
+  collections:
+    - ../PawCircle_API_Collection.postman_collection.json
+  environments:
+    - ../PawCircle_Local_Environment.postman_environment.json
+
+cloudResources:
+  collections:
+    ../postman/collections/PawCircle AI API Collection: 1b00ae3a-b868-4d8f-9c31-ae2d905e7cba

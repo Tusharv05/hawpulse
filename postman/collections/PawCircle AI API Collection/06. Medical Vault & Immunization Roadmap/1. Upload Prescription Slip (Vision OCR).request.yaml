@@ -1,0 +1,29 @@
+$kind: http-request
+url: "{{baseUrl}}/api/v1/medical/prescriptions/upload"
+method: POST
+body:
+  type: formdata
+  content:
+    - type: text
+      key: pet_id
+      value: "{{pet_id}}"
+    - type: file
+      key: file
+      src: []
+auth:
+  type: bearer
+  credentials:
+    token: "{{access_token}}"
+scripts:
+  - type: afterResponse
+    code: |-
+      if (pm.response.code === 200) {
+          var json = pm.response.json();
+          if (json.id) {
+              pm.collectionVariables.set('prescription_id', json.id);
+              pm.environment.set('prescription_id', json.id);
+              console.log('Saved prescription_id:', json.id);
+          }
+      }
+    language: text/javascript
+order: 1000

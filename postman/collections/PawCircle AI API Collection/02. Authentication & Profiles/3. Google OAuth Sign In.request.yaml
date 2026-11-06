@@ -1,0 +1,13 @@
+$kind: http-request
+url: "{{baseUrl}}/api/v1/auth/google"
+method: POST
+headers:
+  Content-Type: application/json
+body:
+  type: text
+  content: |-
+    {
+      "id_token": "SAMPLE_GOOGLE_ID_TOKEN",
+      "redirect_uri": "http://localhost:5173"
+    }
+order: 3000

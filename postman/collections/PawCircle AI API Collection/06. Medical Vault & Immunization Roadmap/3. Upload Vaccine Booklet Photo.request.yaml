@@ -1,0 +1,17 @@
+$kind: http-request
+url: "{{baseUrl}}/api/v1/medical/vaccines/upload"
+method: POST
+body:
+  type: formdata
+  content:
+    - type: text
+      key: pet_id
+      value: "{{pet_id}}"
+    - type: file
+      key: file
+      src: []
+auth:
+  type: bearer
+  credentials:
+    token: "{{access_token}}"
+order: 3000

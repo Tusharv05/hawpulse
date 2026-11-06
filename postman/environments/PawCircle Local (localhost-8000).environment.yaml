@@ -1,0 +1,18 @@
+name: 'PawCircle Local (localhost:8000)'
+values:
+  - key: baseUrl
+    value: 'http://localhost:8000'
+  - key: access_token
+    value: ''
+  - key: pet_id
+    value: ''
+  - key: user_id
+    value: ''
+  - key: prescription_id
+    value: ''
+  - key: event_id
+    value: ''
+  - key: sitter_token
+    value: ''
+  - key: other_user_id
+    value: ''

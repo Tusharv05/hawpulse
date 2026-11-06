@@ -1,0 +1,1352 @@
+{
+  "info": {
+    "name": "PawCircle AI API Collection",
+    "_postman_id": "pawcircle-api-collection-v2",
+    "description": "Comprehensive Postman API Collection for PawCircle Pet Platform (FastAPI + Neon PostgreSQL + PostGIS + AI Vision & Triage)",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:8000",
+      "type": "string"
+    },
+    {
+      "key": "access_token",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "pet_id",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "user_id",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "prescription_id",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "event_id",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "sitter_token",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "other_user_id",
+      "value": "",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "01. System & Health",
+      "item": [
+        {
+          "name": "Root Status",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                ""
+              ]
+            },
+            "description": "Returns API service name, environment, and online status."
+          }
+        },
+        {
+          "name": "Health Check",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/health",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "health"
+              ]
+            },
+            "description": "Verifies Neon PostgreSQL connection and AI model readiness."
+          }
+        }
+      ]
+    },
+    {
+      "name": "02. Authentication & Profiles",
+      "item": [
+        {
+          "name": "1. Request OTP Code",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"pooja@example.com\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/auth/request-otp",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "auth",
+                "request-otp"
+              ]
+            },
+            "description": "Generates and dispatches a 6-digit passwordless login code via Email (or logs to console in dev mode)."
+          }
+        },
+        {
+          "name": "2. Verify OTP & Obtain JWT (Auto-saves Token)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    var json = pm.response.json();",
+                  "    if (json.access_token) {",
+                  "        pm.collectionVariables.set('access_token', json.access_token);",
+                  "        pm.environment.set('access_token', json.access_token);",
+                  "        console.log('Saved access_token:', json.access_token);",
+                  "    }",
+                  "    if (json.user_id) {",
+                  "        pm.collectionVariables.set('user_id', json.user_id);",
+                  "        pm.environment.set('user_id', json.user_id);",
+                  "    }",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"pooja@example.com\",\n  \"otp\": \"123456\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/auth/verify-otp",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "auth",
+                "verify-otp"
+              ]
+            },
+            "description": "Validates 6-digit code (dev accepts 123456), auto-provisions profile in Neon PostgreSQL, and returns 30-day JWT Bearer token."
+          }
+        },
+        {
+          "name": "3. Google OAuth Sign In",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"id_token\": \"SAMPLE_GOOGLE_ID_TOKEN\",\n  \"redirect_uri\": \"http://localhost:5173\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/auth/google",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "auth",
+                "google"
+              ]
+            }
+          }
+        },
+        {
+          "name": "4. Get Current Profile",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{access_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/auth/me",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "auth",
+                "me"
+              ]
+            }
+          }
+        },
+        {
+          "name": "5. Update Geolocation (Privacy-Fuzzed)",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{access_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"latitude\": 37.7749,\n  \"longitude\": -122.4194\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/auth/location",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "auth",
+                "location"
+              ]
+            },
+            "description": "Reverse-geocodes coordinates via OpenStreetMap and snaps to ~350m neighborhood fuzz radius for user privacy."
+          }
+        }
+      ]
+    },
+    {
+      "name": "03. Pets Management",
+      "item": [
+        {
+          "name": "1. Create Pet Profile (Auto-saves Pet ID)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 201 || pm.response.code === 200) {",
+                  "    var json = pm.response.json();",
+                  "    if (json.id) {",
+                  "        pm.collectionVariables.set('pet_id', json.id);",
+                  "        pm.environment.set('pet_id', json.id);",
+                  "        console.log('Saved pet_id:', json.id);",
+                  "    }",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{access_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Cooper\",\n  \"species\": \"dog\",\n  \"breed\": \"Golden Retriever\",\n  \"birth_date\": \"2023-04-12\",\n  \"weight_kg\": 28.5,\n  \"allergies\": [\n    \"chicken\",\n    \"grains\"\n  ],\n  \"energy_level\": \"high\",\n  \"play_style\": \"gentle player\",\n  \"is_neutered\": true,\n  \"vax_status\": \"partial\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/pets",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "pets"
+              ]
+            }
+          }
+        },
+        {
+          "name": "2. List My Pets",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{access_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/pets",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "pets"
+              ]
+            }
+          }
+        },
+        {
+          "name": "3. Get Pet Details",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{access_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/pets/{{pet_id}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "pets",
+                "{{pet_id}}"
+              ]
+            }
+          }
+        },
+        {
+          "name": "4. Update Pet Profile",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{access_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"weight_kg\": 29.0,\n  \"energy_level\": \"very_high\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/pets/{{pet_id}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "pets",
+                "{{pet_id}}"
+              ]
+            }
+          }
+        },
+        {
+          "name": "5. Upload Pet Photo",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{access_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "file",
+                  "type": "file",
+                  "src": []
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/pets/{{pet_id}}/photos",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "pets",
+                "{{pet_id}}",
+                "photos"
+              ]
+            }
+          }
+        },
+        {
+          "name": "6. Delete Pet",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{access_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/pets/{{pet_id}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "pets",
+                "{{pet_id}}"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "04. 1-Tap Daily Care Diary",
+      "item": [
+        {
+          "name": "1. 1-Tap Quick Log (Feed, Walk, Water, Potty, Meds)",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{access_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"pet_id\": \"{{pet_id}}\",\n  \"event_type\": \"feed\",\n  \"details\": {\n    \"portion_grams\": 180,\n    \"food\": \"Salmon & Sweet Potato kibble\"\n  },\n  \"notes\": \"Ate enthusiastically at 08:00 AM\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/diary/log",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "diary",
+                "log"
+              ]
+            }
+          }
+        },
+        {
+          "name": "2. Get Today Timeline & Activity Streak",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{access_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/diary/{{pet_id}}/today",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "diary",
+                "{{pet_id}}",
+                "today"
+              ]
+            }
+          }
+        },
+        {
+          "name": "3. Generate Sitter Share Token (Auto-saves Token)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    var json = pm.response.json();",
+                  "    if (json.share_token) {",
+                  "        pm.collectionVariables.set('sitter_token', json.share_token);",
+                  "        pm.environment.set('sitter_token', json.share_token);",
+                  "        console.log('Saved sitter_token:', json.share_token);",
+                  "    }",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{access_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/diary/{{pet_id}}/share-token",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "diary",
+                "{{pet_id}}",
+                "share-token"
+              ]
+            }
+          }
+        },
+        {
+          "name": "4. Public Sitter Pass View (No Auth Required)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/diary/shared/{{sitter_token}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "diary",
+                "shared",
+                "{{sitter_token}}"
+              ]
+            },
+            "description": "Public read-only care briefing card for pet sitters, boarding facilities, or dog walkers."
+          }
+        }
+      ]
+    },
+    {
+      "name": "05. AI Nutrition Lab & Meal Schedules",
+      "item": [
+        {
+          "name": "1. Generate AI Diet Plan",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{access_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"pet_id\": \"{{pet_id}}\",\n  \"custom_prompt\": \"High protein lean maintenance diet with allergy friendly ingredients\",\n  \"diet_preset\": \"Active Adult Maintenance\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/diet/generate",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "diet",
+                "generate"
+              ]
+            }
+          }
+        },
+        {
+          "name": "2. Adopt Diet Plan & Create Schedules",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{access_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"diet_plan_id\": \"SAMPLE_DIET_PLAN_ID\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/diet/adopt",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "diet",
+                "adopt"
+              ]
+            }
+          }
+        },
+        {
+          "name": "3. Get Active Diet Plan",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{access_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/diet/{{pet_id}}/current",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "diet",
+                "{{pet_id}}",
+                "current"
+              ]
+            }
+          }
+        },
+        {
+          "name": "4. Get Meal Alert Schedules",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{access_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/diet/{{pet_id}}/schedules",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "diet",
+                "{{pet_id}}",
+                "schedules"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "06. Medical Vault & Immunization Roadmap",
+      "item": [
+        {
+          "name": "1. Upload Prescription Slip (Vision OCR)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    var json = pm.response.json();",
+                  "    if (json.id) {",
+                  "        pm.collectionVariables.set('prescription_id', json.id);",
+                  "        pm.environment.set('prescription_id', json.id);",
+                  "        console.log('Saved prescription_id:', json.id);",
+                  "    }",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{access_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "pet_id",
+                  "value": "{{pet_id}}",
+                  "type": "text"
+                },
+                {
+                  "key": "file",
+                  "type": "file",
+                  "src": []
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/medical/prescriptions/upload",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "medical",
+                "prescriptions",
+                "upload"
+              ]
+            }
+          }
+        },
+        {
+          "name": "2. 1-Tap Convert Rx to Medication Alarms",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{access_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/medical/prescriptions/{{prescription_id}}/create-alarms",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "medical",
+                "prescriptions",
+                "{{prescription_id}}",
+                "create-alarms"
+              ]
+            }
+          }
+        },
+        {
+          "name": "3. Upload Vaccine Booklet Photo",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{access_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "pet_id",
+                  "value": "{{pet_id}}",
+                  "type": "text"
+                },
+                {
+                  "key": "file",
+                  "type": "file",
+                  "src": []
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/medical/vaccines/upload",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "medical",
+                "vaccines",
+                "upload"
+              ]
+            }
+          }
+        },
+        {
+          "name": "4. Get Immunization Roadmap & Safe Walk Score",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{access_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/medical/{{pet_id}}/roadmap",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "medical",
+                "{{pet_id}}",
+                "roadmap"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "07. AI Health Chat & Triage Guardrails",
+      "item": [
+        {
+          "name": "1. Ask Health Question (Safe Wellness)",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{access_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"pet_id\": \"{{pet_id}}\",\n  \"message\": \"What is the best grooming brush for a golden retriever double coat?\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/health-chat",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "health-chat"
+              ]
+            }
+          }
+        },
+        {
+          "name": "2. Emergency Ingestion Test (Tier 1 Guardrail)",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{access_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"pet_id\": \"{{pet_id}}\",\n  \"message\": \"My dog ate dark chocolate baker squares about 20 minutes ago!\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/health-chat",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "health-chat"
+              ]
+            },
+            "description": "Triggers instant Tier 1 emergency triage with poison hotlines and first aid rules."
+          }
+        },
+        {
+          "name": "3. Streaming Health Chat (SSE)",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{access_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"pet_id\": \"{{pet_id}}\",\n  \"message\": \"How often should I trim Cooper nails?\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/health-chat/stream",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "health-chat",
+                "stream"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "08. Community Radar, Pack Walks & Matchmaking",
+      "item": [
+        {
+          "name": "1. Spatial Radar (PostGIS Proximity Query)",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{access_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/community/radar?latitude=37.7749&longitude=-122.4194&radius_km=5.0",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "community",
+                "radar"
+              ],
+              "query": [
+                {
+                  "key": "latitude",
+                  "value": "37.7749"
+                },
+                {
+                  "key": "longitude",
+                  "value": "-122.4194"
+                },
+                {
+                  "key": "radius_km",
+                  "value": "5.0"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "2. Create Pack Walk Meetup Event (Auto-saves Event ID)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 201 || pm.response.code === 200) {",
+                  "    var json = pm.response.json();",
+                  "    if (json.id) {",
+                  "        pm.collectionVariables.set('event_id', json.id);",
+                  "        pm.environment.set('event_id', json.id);",
+                  "        console.log('Saved event_id:', json.id);",
+                  "    }",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{access_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Saturday Morning Golden Gate Pack Walk\",\n  \"description\": \"Friendly social pack walk for playful dogs with verified rabies vaccines.\",\n  \"location_name\": \"Dolores Park Dog Run\",\n  \"latitude\": 37.7596,\n  \"longitude\": -122.4269,\n  \"event_time\": \"2026-10-25T10:00:00Z\",\n  \"max_attendees\": 12,\n  \"requires_verified_vax\": true\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/community/events",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "community",
+                "events"
+              ]
+            }
+          }
+        },
+        {
+          "name": "3. RSVP to Pack Walk Event (Vaccine Verification Gated)",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{access_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"pet_id\": \"{{pet_id}}\",\n  \"status\": \"going\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/community/events/{{event_id}}/rsvp",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "community",
+                "events",
+                "{{event_id}}",
+                "rsvp"
+              ]
+            }
+          }
+        },
+        {
+          "name": "4. Swipe Pet (Like / Pass)",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{access_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"target_pet_id\": \"SAMPLE_OTHER_PET_ID\",\n  \"direction\": \"like\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/community/swipe",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "community",
+                "swipe"
+              ]
+            }
+          }
+        },
+        {
+          "name": "5. Get Mutual Matches",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{access_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/community/matches",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "community",
+                "matches"
+              ]
+            }
+          }
+        },
+        {
+          "name": "6. Send Direct Message",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{access_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"recipient_id\": \"SAMPLE_USER_ID\",\n  \"message\": \"Hi! Saw Cooper and Buster match. Would love to join the pack walk!\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/community/messages",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "community",
+                "messages"
+              ]
+            }
+          }
+        },
+        {
+          "name": "7. Get Direct Messages Thread",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{access_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/community/messages/{{other_user_id}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "community",
+                "messages",
+                "{{other_user_id}}"
+              ]
+            }
+          }
+        }
+      ]
+    }
+  ]
+}

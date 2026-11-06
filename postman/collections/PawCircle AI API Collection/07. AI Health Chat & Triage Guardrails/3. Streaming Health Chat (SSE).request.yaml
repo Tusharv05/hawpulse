@@ -1,0 +1,17 @@
+$kind: http-request
+url: "{{baseUrl}}/api/v1/health-chat/stream"
+method: POST
+headers:
+  Content-Type: application/json
+body:
+  type: text
+  content: |-
+    {
+      "pet_id": "{{pet_id}}",
+      "message": "How often should I trim Cooper nails?"
+    }
+auth:
+  type: bearer
+  credentials:
+    token: "{{access_token}}"
+order: 3000

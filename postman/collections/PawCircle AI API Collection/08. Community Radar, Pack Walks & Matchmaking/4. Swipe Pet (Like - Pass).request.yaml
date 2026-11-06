@@ -1,0 +1,18 @@
+$kind: http-request
+name: 4. Swipe Pet (Like / Pass)
+url: "{{baseUrl}}/api/v1/community/swipe"
+method: POST
+headers:
+  Content-Type: application/json
+body:
+  type: text
+  content: |-
+    {
+      "target_pet_id": "SAMPLE_OTHER_PET_ID",
+      "direction": "like"
+    }
+auth:
+  type: bearer
+  credentials:
+    token: "{{access_token}}"
+order: 4000

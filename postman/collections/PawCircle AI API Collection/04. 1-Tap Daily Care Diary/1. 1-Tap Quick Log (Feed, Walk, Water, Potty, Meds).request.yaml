@@ -1,0 +1,22 @@
+$kind: http-request
+url: "{{baseUrl}}/api/v1/diary/log"
+method: POST
+headers:
+  Content-Type: application/json
+body:
+  type: text
+  content: |-
+    {
+      "pet_id": "{{pet_id}}",
+      "event_type": "feed",
+      "details": {
+        "portion_grams": 180,
+        "food": "Salmon & Sweet Potato kibble"
+      },
+      "notes": "Ate enthusiastically at 08:00 AM"
+    }
+auth:
+  type: bearer
+  credentials:
+    token: "{{access_token}}"
+order: 1000

@@ -1,0 +1,13 @@
+$kind: http-request
+description: Generates and dispatches a 6-digit passwordless login code via Email (or logs to console in dev mode).
+url: "{{baseUrl}}/api/v1/auth/request-otp"
+method: POST
+headers:
+  Content-Type: application/json
+body:
+  type: text
+  content: |-
+    {
+      "email": "pooja@example.com"
+    }
+order: 1000

@@ -1,0 +1,5 @@
+$kind: http-request
+description: Public read-only care briefing card for pet sitters, boarding facilities, or dog walkers.
+url: "{{baseUrl}}/api/v1/diary/shared/{{sitter_token}}"
+method: GET
+order: 4000

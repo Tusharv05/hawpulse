@@ -1,0 +1,18 @@
+$kind: http-request
+description: Reverse-geocodes coordinates via OpenStreetMap and snaps to ~350m neighborhood fuzz radius for user privacy.
+url: "{{baseUrl}}/api/v1/auth/location"
+method: POST
+headers:
+  Content-Type: application/json
+body:
+  type: text
+  content: |-
+    {
+      "latitude": 37.7749,
+      "longitude": -122.4194
+    }
+auth:
+  type: bearer
+  credentials:
+    token: "{{access_token}}"
+order: 5000

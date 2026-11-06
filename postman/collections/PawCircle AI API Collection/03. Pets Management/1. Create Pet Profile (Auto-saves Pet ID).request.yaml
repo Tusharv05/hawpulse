@@ -1,0 +1,40 @@
+$kind: http-request
+url: "{{baseUrl}}/api/v1/pets"
+method: POST
+headers:
+  Content-Type: application/json
+body:
+  type: text
+  content: |-
+    {
+      "name": "Cooper",
+      "species": "dog",
+      "breed": "Golden Retriever",
+      "birth_date": "2023-04-12",
+      "weight_kg": 28.5,
+      "allergies": [
+        "chicken",
+        "grains"
+      ],
+      "energy_level": "high",
+      "play_style": "gentle player",
+      "is_neutered": true,
+      "vax_status": "partial"
+    }
+auth:
+  type: bearer
+  credentials:
+    token: "{{access_token}}"
+scripts:
+  - type: afterResponse
+    code: |-
+      if (pm.response.code === 201 || pm.response.code === 200) {
+          var json = pm.response.json();
+          if (json.id) {
+              pm.collectionVariables.set('pet_id', json.id);
+              pm.environment.set('pet_id', json.id);
+              console.log('Saved pet_id:', json.id);
+          }
+      }
+    language: text/javascript
+order: 1000

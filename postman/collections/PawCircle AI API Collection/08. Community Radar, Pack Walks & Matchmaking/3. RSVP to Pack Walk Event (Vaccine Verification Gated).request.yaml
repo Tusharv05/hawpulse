@@ -1,0 +1,17 @@
+$kind: http-request
+url: "{{baseUrl}}/api/v1/community/events/{{event_id}}/rsvp"
+method: POST
+headers:
+  Content-Type: application/json
+body:
+  type: text
+  content: |-
+    {
+      "pet_id": "{{pet_id}}",
+      "status": "going"
+    }
+auth:
+  type: bearer
+  credentials:
+    token: "{{access_token}}"
+order: 3000

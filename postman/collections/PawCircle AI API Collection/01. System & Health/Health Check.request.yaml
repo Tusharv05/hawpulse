@@ -1,0 +1,5 @@
+$kind: http-request
+description: Verifies Neon PostgreSQL connection and AI model readiness.
+url: "{{baseUrl}}/api/v1/health"
+method: GET
+order: 2000
