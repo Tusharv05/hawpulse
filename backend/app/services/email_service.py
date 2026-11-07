@@ -108,12 +108,15 @@ class EmailService:
         # 1. Try Resend REST API if key provided
         if self.resend_api_key.strip():
             try:
+                sender_email = self.from_email
+                if not sender_email or "@gmail.com" in sender_email or "hawpulse.com" in sender_email:
+                    sender_email = "onboarding@resend.dev"
                 async with httpx.AsyncClient(timeout=10.0) as client:
                     resp = await client.post(
                         "https://api.resend.com/emails",
                         headers={"Authorization": f"Bearer {self.resend_api_key}"},
                         json={
-                            "from": f"{self.from_name} <{self.from_email}>",
+                            "from": f"{self.from_name} <{sender_email}>",
                             "to": [to_email],
                             "subject": f"🐾 Your HawPulse Login Code: {otp}",
                             "html": self._render_otp_html(otp, to_email)
