@@ -7,12 +7,7 @@ export default defineConfig({
   server: {
     port: 5175,
     host: true,
-    allowedHosts: [
-      'perfect-vibrancy-production-8e35.up.railway.app',
-      '.railway.app',
-      '.up.railway.app',
-      'localhost',
-    ],
+    allowedHosts: true,
     proxy: {
       '/api': {
         target: 'http://127.0.0.1:8000',
@@ -26,11 +21,6 @@ export default defineConfig({
   },
   preview: {
     host: true,
-    allowedHosts: [
-      'perfect-vibrancy-production-8e35.up.railway.app',
-      '.railway.app',
-      '.up.railway.app',
-      'localhost',
-    ],
+    allowedHosts: true,
   },
 })
