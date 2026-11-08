@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { authApi } from '../services/api';
+import { authApi, petsApi } from '../services/api';
 
-export default function SignInModal({ isOpen, onClose, onAuthenticated }) {
+export default function SignInModal({ isOpen, onClose, onAuthenticated, onSwitchToOnboarding }) {
   const [authStep, setAuthStep] = useState('signin'); // 'signin' | 'verify' | 'magic'
   const [email, setEmail] = useState('');
   const [codeDigits, setCodeDigits] = useState(['', '', '', '', '', '']);
@@ -9,6 +9,7 @@ export default function SignInModal({ isOpen, onClose, onAuthenticated }) {
   const [isLoading, setIsLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
   const [authSuccessData, setAuthSuccessData] = useState(null);
+  const [isNewUser, setIsNewUser] = useState(false);
   const inputRefs = useRef([]);
 
   // Reset state when opening modal
@@ -18,6 +19,7 @@ export default function SignInModal({ isOpen, onClose, onAuthenticated }) {
       setCodeDigits(['', '', '', '', '', '']);
       setErrorMessage('');
       setIsLoading(false);
+      setIsNewUser(false);
     }
   }, [isOpen]);
 
@@ -93,14 +95,25 @@ export default function SignInModal({ isOpen, onClose, onAuthenticated }) {
     try {
       const res = await authApi.verifyOtp(email.trim(), enteredOtp);
       setAuthSuccessData(res);
+
+      // Check whether user already has pets or is brand new
+      let userIsNew = true;
+      try {
+        const pets = await petsApi.getPets();
+        userIsNew = !pets || pets.length === 0;
+      } catch {
+        userIsNew = true;
+      }
+      setIsNewUser(userIsNew);
+
       // Automatically advance to Step 3 (Success)
       setAuthStep('magic');
 
-      // Auto-complete and redirect to dashboard after 1.2 seconds
+      // Auto-complete and redirect after 1.3 seconds
       setTimeout(() => {
-        if (onAuthenticated) onAuthenticated();
+        if (onAuthenticated) onAuthenticated(userIsNew);
         onClose();
-      }, 1300);
+      }, 1400);
     } catch (err) {
       setErrorMessage(err.message || 'Invalid or expired OTP code. Please check your inbox.');
     } finally {
@@ -229,7 +242,7 @@ export default function SignInModal({ isOpen, onClose, onAuthenticated }) {
               </div>
 
               <div>
-                <h3 className="font-headline-lg text-2xl font-bold text-on-surface">Welcome back to HawPulse</h3>
+                <h3 className="font-headline-lg text-2xl font-bold text-on-surface">Sign in to HawPulse</h3>
                 <p className="text-xs sm:text-sm text-on-surface-variant mt-1">
                   Enter your email. We'll send a 6-digit passwordless code.
                 </p>
@@ -288,6 +301,23 @@ export default function SignInModal({ isOpen, onClose, onAuthenticated }) {
                   {isLoading && <span className="animate-spin material-symbols-outlined text-[18px]">progress_activity</span>}
                   {isLoading ? 'Sending Code to Your Email...' : 'Send 6-Digit Code'}
                 </button>
+
+                {/* Switch to Getting Started / Onboarding */}
+                <div className="pt-3 border-t border-outline-variant/30 w-full mt-2 text-center">
+                  <p className="text-xs text-on-surface-variant">
+                    Don't have an account yet?{' '}
+                    <button
+                      type="button"
+                      onClick={() => {
+                        onClose();
+                        if (onSwitchToOnboarding) onSwitchToOnboarding();
+                      }}
+                      className="font-bold text-primary hover:underline cursor-pointer"
+                    >
+                      Get started &rarr;
+                    </button>
+                  </p>
+                </div>
               </form>
             </div>
           )}
@@ -381,32 +411,40 @@ export default function SignInModal({ isOpen, onClose, onAuthenticated }) {
               </div>
 
               <div>
-                <span className="text-xs font-bold uppercase tracking-wider text-tertiary">Authenticated</span>
+                <span className="text-xs font-bold uppercase tracking-wider text-tertiary">
+                  {isNewUser ? 'Welcome!' : 'Authenticated'}
+                </span>
                 <h3 className="font-headline-lg text-2xl font-bold text-on-surface mt-1">
-                  Welcome back{authSuccessData?.full_name ? `, ${authSuccessData.full_name}` : ''}!
+                  {isNewUser
+                    ? 'Welcome to HawPulse!'
+                    : `Welcome back${authSuccessData?.full_name ? `, ${authSuccessData.full_name}` : ''}!`}
                 </h3>
                 <p className="text-xs text-on-surface-variant mt-1">
-                  Signed in as <strong>{email}</strong>. Entering dashboard...
+                  {isNewUser
+                    ? 'Heading to pet setup...'
+                    : `Signed in as ${email}. Entering dashboard...`}
                 </p>
               </div>
 
               <div className="w-full p-4 rounded-xl bg-surface-container-low border border-outline-variant/30 text-xs text-on-surface flex items-center gap-3 text-left">
                 <span className="material-symbols-outlined text-primary text-[24px]">verified_user</span>
                 <div>
-                  <span className="font-bold block">Passwordless Session Active</span>
-                  <span className="text-outline">Session synchronized. Valid for 30 days.</span>
+                  <span className="font-bold block">Session Active</span>
+                  <span className="text-outline">
+                    {isNewUser ? 'Ready to create your pet’s profile.' : 'Session synchronized. Valid for 30 days.'}
+                  </span>
                 </div>
               </div>
 
               <button
                 type="button"
                 onClick={() => {
-                  if (onAuthenticated) onAuthenticated();
+                  if (onAuthenticated) onAuthenticated(isNewUser);
                   onClose();
                 }}
                 className="w-full h-12 rounded-full bg-primary-container text-on-surface font-bold text-xs sm:text-sm hover:bg-primary-fixed-dim transition-colors shadow-xs mt-2 cursor-pointer"
               >
-                Go to Dashboard
+                {isNewUser ? 'Create Pet Profile' : 'Go to Dashboard'}
               </button>
             </div>
           )}

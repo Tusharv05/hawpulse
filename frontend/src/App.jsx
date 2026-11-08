@@ -13,7 +13,7 @@ import SignInModal from './components/SignInModal';
 import SitterPassModal from './components/SitterPassModal';
 import PrivacyPolicy from './components/PrivacyPolicy';
 import TermsOfUse from './components/TermsOfUse';
-import { setAuthToken, setStoredUser, getStoredUser, clearSession, getAuthToken } from './services/api';
+import { setAuthToken, setStoredUser, getStoredUser, clearSession, getAuthToken, petsApi } from './services/api';
 
 const VALID_TABS = ['landing', 'daily-care', 'diet-lab', 'medical-vault', 'community', 'emergency', 'profile', 'privacy', 'terms'];
 const LANDING_SECTIONS = ['board', 'what', 'how', 'proof', 'radar', 'top'];
@@ -88,6 +88,24 @@ export default function App() {
     setIsSitterPassOpen(false);
     if (window.location.hash === '#sitter-pass') {
       window.history.back();
+    }
+  };
+
+  const handleAuthSuccess = async (isNewUser) => {
+    if (isNewUser === true) {
+      handleOpenOnboarding('add-pet');
+      return;
+    }
+
+    try {
+      const pets = await petsApi.getPets();
+      if (!pets || pets.length === 0) {
+        handleOpenOnboarding('add-pet');
+      } else {
+        handleTabChange('daily-care');
+      }
+    } catch {
+      handleOpenOnboarding('add-pet');
     }
   };
 
@@ -190,7 +208,17 @@ export default function App() {
         if (resumeStep) {
           handleOpenOnboarding('full');
         } else {
-          handleTabChange('daily-care');
+          petsApi.getPets()
+            .then(pets => {
+              if (!pets || pets.length === 0) {
+                handleOpenOnboarding('add-pet');
+              } else {
+                handleTabChange('daily-care');
+              }
+            })
+            .catch(() => {
+              handleOpenOnboarding('add-pet');
+            });
         }
       }
     } else if (params.get('google_auth_error')) {
@@ -286,7 +314,8 @@ export default function App() {
         <SignInModal
           isOpen={isAuthOpen}
           onClose={handleCloseAuth}
-          onAuthenticated={() => handleTabChange('daily-care')}
+          onAuthenticated={handleAuthSuccess}
+          onSwitchToOnboarding={() => handleOpenOnboarding('full')}
         />
 
         {/* Sitter Care Pass Modal */}
