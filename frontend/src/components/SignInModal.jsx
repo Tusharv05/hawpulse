@@ -309,8 +309,11 @@ export default function SignInModal({ isOpen, onClose, onAuthenticated, onSwitch
                     <button
                       type="button"
                       onClick={() => {
-                        onClose();
-                        if (onSwitchToOnboarding) onSwitchToOnboarding();
+                        if (onSwitchToOnboarding) {
+                          onSwitchToOnboarding();
+                        } else {
+                          window.location.hash = '#onboarding';
+                        }
                       }}
                       className="font-bold text-primary hover:underline cursor-pointer"
                     >

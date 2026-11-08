@@ -68,8 +68,19 @@ export default function App() {
   const handleOpenOnboarding = (mode = 'full') => {
     const chosenMode = typeof mode === 'string' ? mode : mode?.mode || (getAuthToken() ? 'add-pet' : 'full');
     setOnboardingMode(chosenMode);
-    window.history.pushState({ tab: activeTab, modal: 'onboarding', mode: chosenMode }, '', '#onboarding');
+    setIsAuthOpen(false);
+    setIsSitterPassOpen(false);
     setIsOnboardingOpen(true);
+    if (window.location.hash !== '#onboarding') {
+      window.location.hash = '#onboarding';
+    }
+  };
+
+  const handleSwitchAuthToOnboarding = () => {
+    setIsAuthOpen(false);
+    setOnboardingMode(getAuthToken() ? 'add-pet' : 'full');
+    setIsOnboardingOpen(true);
+    window.location.hash = '#onboarding';
   };
 
   const handleCloseOnboarding = () => {
@@ -315,7 +326,7 @@ export default function App() {
           isOpen={isAuthOpen}
           onClose={handleCloseAuth}
           onAuthenticated={handleAuthSuccess}
-          onSwitchToOnboarding={() => handleOpenOnboarding('full')}
+          onSwitchToOnboarding={handleSwitchAuthToOnboarding}
         />
 
         {/* Sitter Care Pass Modal */}
