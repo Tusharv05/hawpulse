@@ -419,6 +419,24 @@ export default function OnboardingModal({ isOpen, onClose, onFinish, onSwitchToS
           ></div>
         </div>
 
+        {/* Prominent Top Banner: Already have an account? Sign in */}
+        {!isAddPetMode && (currentStepId === 'location' || currentStepId === 'account') && (
+          <div className="px-5 py-2.5 bg-primary-container/25 border-b border-outline-variant/30 flex items-center justify-between text-xs sm:text-sm shrink-0">
+            <span className="text-on-surface-variant font-medium">Already have an account?</span>
+            <button
+              type="button"
+              onClick={() => {
+                onClose();
+                if (onSwitchToSignIn) onSwitchToSignIn();
+              }}
+              className="font-bold text-primary hover:underline cursor-pointer flex items-center gap-1"
+            >
+              <span>Sign in instead</span>
+              <span>&rarr;</span>
+            </button>
+          </div>
+        )}
+
         {/* Modal Body */}
         <div className="p-6 sm:p-8 flex flex-col gap-6 max-h-[75vh] overflow-y-auto">
           {/* ================= STEP: LOCATION ================= */}
@@ -585,23 +603,6 @@ export default function OnboardingModal({ isOpen, onClose, onFinish, onSwitchToS
                   ))}
                 </div>
               </div>
-
-              {/* Quick switch to Sign In for existing users */}
-              <div className="pt-3 border-t border-outline-variant/30 text-center w-full mt-1">
-                <p className="text-xs text-on-surface-variant">
-                  Already have an account?{' '}
-                  <button
-                    type="button"
-                    onClick={() => {
-                      onClose();
-                      if (onSwitchToSignIn) onSwitchToSignIn();
-                    }}
-                    className="font-bold text-primary hover:underline cursor-pointer"
-                  >
-                    Sign in instead &rarr;
-                  </button>
-                </p>
-              </div>
             </div>
           )}
 
@@ -755,23 +756,6 @@ export default function OnboardingModal({ isOpen, onClose, onFinish, onSwitchToS
                       </button>
                     </div>
                   )}
-
-                  {/* Switch to Sign In */}
-                  <div className="pt-3 border-t border-outline-variant/30 text-center w-full mt-2">
-                    <p className="text-xs text-on-surface-variant">
-                      Already have an account?{' '}
-                      <button
-                        type="button"
-                        onClick={() => {
-                          onClose();
-                          if (onSwitchToSignIn) onSwitchToSignIn();
-                        }}
-                        className="font-bold text-primary hover:underline cursor-pointer"
-                      >
-                        Sign in instead &rarr;
-                      </button>
-                    </p>
-                  </div>
                 </div>
               )}
             </div>
