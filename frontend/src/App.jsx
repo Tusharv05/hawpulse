@@ -66,7 +66,28 @@ export default function App() {
   };
 
   const handleOpenOnboarding = (mode = 'full') => {
-    const chosenMode = typeof mode === 'string' ? mode : mode?.mode || (getAuthToken() ? 'add-pet' : 'full');
+    // If user already has an active session
+    if (getAuthToken()) {
+      petsApi.getPets()
+        .then(pets => {
+          if (pets && pets.length > 0) {
+            handleTabChange('daily-care');
+          } else {
+            setOnboardingMode('add-pet');
+            setIsAuthOpen(false);
+            setIsOnboardingOpen(true);
+            window.location.hash = '#onboarding';
+          }
+        })
+        .catch(() => {
+          setIsAuthOpen(true);
+          setIsOnboardingOpen(false);
+          window.location.hash = '#auth';
+        });
+      return;
+    }
+
+    const chosenMode = typeof mode === 'string' ? mode : mode?.mode || 'full';
     setOnboardingMode(chosenMode);
     setIsAuthOpen(false);
     setIsSitterPassOpen(false);
@@ -317,6 +338,11 @@ export default function App() {
             } else {
               handleTabChange('daily-care');
             }
+          }}
+          onSwitchToSignIn={() => {
+            setIsOnboardingOpen(false);
+            setIsAuthOpen(true);
+            window.location.hash = '#auth';
           }}
           mode={onboardingMode}
         />

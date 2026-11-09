@@ -4,7 +4,7 @@ import { petsApi, authApi, getAuthToken, setStoredActivePet, getStoredUser } fro
 import { calculateBirthDateFromAge } from '../utils/petAge';
 import EarthPawLocationGraphic from './EarthPawLocationGraphic';
 
-export default function OnboardingModal({ isOpen, onClose, onFinish, mode = 'full' }) {
+export default function OnboardingModal({ isOpen, onClose, onFinish, onSwitchToSignIn, mode = 'full' }) {
   const isAddPetMode = mode === 'add-pet' || (!!getAuthToken() && mode !== 'force-full');
 
   // Dynamic step configuration: Add-Pet mode starts directly from Pet Dialog without parents things
@@ -247,6 +247,19 @@ export default function OnboardingModal({ isOpen, onClose, onFinish, mode = 'ful
       }
       setIsOtpVerified(true);
       setResendNotice('');
+
+      // Auto-detect if this account already has pet records
+      try {
+        const pets = await petsApi.getPets();
+        if (Array.isArray(pets) && pets.length > 0) {
+          setStoredActivePet(pets[0]);
+          onClose();
+          if (onFinish) onFinish();
+          return;
+        }
+      } catch (petsErr) {
+        console.warn('Pets check note:', petsErr);
+      }
     } catch (err) {
       setAuthError(err.message || 'Invalid or expired verification code.');
     } finally {
@@ -572,6 +585,23 @@ export default function OnboardingModal({ isOpen, onClose, onFinish, mode = 'ful
                   ))}
                 </div>
               </div>
+
+              {/* Quick switch to Sign In for existing users */}
+              <div className="pt-3 border-t border-outline-variant/30 text-center w-full mt-1">
+                <p className="text-xs text-on-surface-variant">
+                  Already have an account?{' '}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      onClose();
+                      if (onSwitchToSignIn) onSwitchToSignIn();
+                    }}
+                    className="font-bold text-primary hover:underline cursor-pointer"
+                  >
+                    Sign in instead &rarr;
+                  </button>
+                </p>
+              </div>
             </div>
           )}
 
@@ -725,6 +755,23 @@ export default function OnboardingModal({ isOpen, onClose, onFinish, mode = 'ful
                       </button>
                     </div>
                   )}
+
+                  {/* Switch to Sign In */}
+                  <div className="pt-3 border-t border-outline-variant/30 text-center w-full mt-2">
+                    <p className="text-xs text-on-surface-variant">
+                      Already have an account?{' '}
+                      <button
+                        type="button"
+                        onClick={() => {
+                          onClose();
+                          if (onSwitchToSignIn) onSwitchToSignIn();
+                        }}
+                        className="font-bold text-primary hover:underline cursor-pointer"
+                      >
+                        Sign in instead &rarr;
+                      </button>
+                    </p>
+                  </div>
                 </div>
               )}
             </div>
