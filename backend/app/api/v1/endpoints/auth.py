@@ -106,8 +106,7 @@ async def google_login(frontend_origin: Optional[str] = "http://localhost:5175")
     scopes = [
         "openid",
         "https://www.googleapis.com/auth/userinfo.email",
-        "https://www.googleapis.com/auth/userinfo.profile",
-        "https://www.googleapis.com/auth/calendar.events"
+        "https://www.googleapis.com/auth/userinfo.profile"
     ]
     params = {
         "client_id": settings.GOOGLE_CLIENT_ID,
