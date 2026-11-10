@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useLayoutEffect } from 'react';
-import { dietApi, petsApi, calendarApi, getStoredActivePet, setStoredActivePet } from '../services/api';
+import { dietApi, petsApi, calendarApi, getStoredActivePet, setStoredActivePet, getStoredUser } from '../services/api';
 import { formatPetAge } from '../utils/petAge';
 
 // Textarea that automatically resizes its height to fit its content,
@@ -171,6 +171,7 @@ export default function DietLab({ setActiveTab }) {
     setIsSchedulingCalendar(true);
     setCalendarResult(null);
     try {
+      const user = getStoredUser();
       const userTz = Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC';
       const cleanDuration = parseInt(calendarDurationDays, 10) || 30;
       const payload = {
@@ -184,12 +185,13 @@ export default function DietLab({ setActiveTab }) {
         evening_time: calendarEveningTime,
         notes: planForm.notes || activeDbPlan?.notes,
         user_timezone: userTz,
+        user_email: user?.email || null,
         duration_days: cleanDuration
       };
 
       const res = await calendarApi.scheduleFeeding(payload);
       setCalendarResult(res);
-      showToast(`✓ Google Calendar feeding reminders scheduled for ${petName} (${cleanDuration} days)!`);
+      showToast(user?.email ? `✓ Google Calendar links ready & invite sent to ${user.email}!` : `✓ Google Calendar links ready!`);
     } catch (err) {
       console.error('Calendar scheduling error:', err);
       showToast(`Calendar error: ${err.message || 'Could not schedule'}`);
@@ -1691,25 +1693,15 @@ export default function DietLab({ setActiveTab }) {
               </button>
             </div>
 
-            {/* Google OAuth Sync Status Badge */}
+            {/* Google Calendar 1-Click Sync Status Badge */}
             <div className="flex items-center justify-between gap-3 p-3 rounded-xl bg-[#F0F7FF] border border-[#1A73E8]/25 text-xs flex-wrap">
               <div className="flex items-center gap-2">
                 <span className="w-2.5 h-2.5 rounded-full bg-[#16A34A] animate-pulse"></span>
                 <span className="font-bold text-[#1A73E8]">
-                  {calendarStatus.connected
-                    ? `Google Calendar: ${calendarStatus.connected_email || 'Connected'}`
-                    : "Google Calendar Ready"}
+                  Google Calendar: 1-Click Sync &amp; Email Invite Ready
                 </span>
               </div>
               <div className="flex items-center gap-3">
-                {calendarStatus.auth_url && (
-                  <a
-                    href={calendarStatus.auth_url}
-                    className="text-[11px] font-bold text-[#1A73E8] hover:underline cursor-pointer"
-                  >
-                    {calendarStatus.connected ? "Switch / Connect Account" : "Connect Account"}
-                  </a>
-                )}
                 <span className="text-[11px] font-mono text-outline">
                   {Intl.DateTimeFormat().resolvedOptions().timeZone || 'Auto Timezone'}
                 </span>
@@ -1896,68 +1888,33 @@ export default function DietLab({ setActiveTab }) {
 
                 {/* Action buttons */}
                 <div className="pt-2">
-                  {!calendarStatus.connected && calendarStatus.auth_url ? (
-                    <div className="flex flex-col gap-2.5 w-full">
-                      <div className="flex gap-2.5">
-                        <a
-                          href={calendarStatus.auth_url}
-                          className="flex-1 h-12 rounded-full bg-[#1A73E8] hover:bg-[#1557b0] text-white font-black text-xs sm:text-sm shadow-md transition-all flex items-center justify-center gap-2 cursor-pointer"
-                        >
-                          <svg className="w-4 h-4 bg-white rounded-full p-0.5" viewBox="0 0 24 24">
-                            <path fill="#4285F4" d="M23.745 12.27c0-.7-.06-1.4-.19-2.07H12v4.51h6.6c-.29 1.52-1.14 2.8-2.4 3.68v3.05h3.88c2.27-2.09 3.66-5.17 3.66-9.17z"/>
-                            <path fill="#34A853" d="M12 24c3.24 0 5.95-1.08 7.93-2.91l-3.88-3.05c-1.08.72-2.45 1.16-4.05 1.16-3.12 0-5.77-2.1-6.72-4.93H1.25v3.15C3.26 21.36 7.33 24 12 24z"/>
-                            <path fill="#FBBC05" d="M5.28 14.27c-.25-.72-.38-1.49-.38-2.27s.13-1.55.38-2.27V6.58H1.25C.45 8.18 0 9.99 0 12s.45 3.82 1.25 5.42l4.03-3.15z"/>
-                            <path fill="#EA4335" d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.42-3.42C17.95 1.19 15.24 0 12 0 7.33 0 3.26 2.64 1.25 6.58l4.03 3.15c.95-2.83 3.6-4.98 6.72-4.98z"/>
-                          </svg>
-                          <span>Connect Google Account (Auto Sync)</span>
-                        </a>
-                        <button
-                          type="button"
-                          onClick={() => setShowCalendarModal(false)}
-                          className="px-5 h-12 rounded-full border-2 border-black/60 text-on-surface font-bold text-xs hover:bg-surface-container transition-colors cursor-pointer"
-                        >
-                          Cancel
-                        </button>
-                      </div>
-                      <button
-                        type="button"
-                        onClick={handleTriggerGoogleCalendar}
-                        disabled={isSchedulingCalendar}
-                        className="w-full h-10 rounded-full border-2 border-[#1A73E8]/40 hover:border-[#1A73E8] bg-white text-[#1A73E8] font-bold text-xs transition-all flex items-center justify-center gap-1.5 cursor-pointer"
-                      >
-                        <span className="material-symbols-outlined text-[18px]">add_link</span>
-                        <span>Or Add to My Calendar via 1-Click Link</span>
-                      </button>
-                    </div>
-                  ) : (
-                    <div className="flex gap-2.5">
-                      <button
-                        type="button"
-                        onClick={handleTriggerGoogleCalendar}
-                        disabled={isSchedulingCalendar}
-                        className="flex-1 h-12 rounded-full bg-[#1A73E8] hover:bg-[#1557b0] text-white font-black text-xs sm:text-sm shadow-md transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
-                      >
-                        {isSchedulingCalendar ? (
-                          <>
-                            <span className="w-4 h-4 rounded-full border-2 border-white border-t-transparent animate-spin"></span>
-                            <span>Scheduling {calendarDurationDays || 30}-Day Events...</span>
-                          </>
-                        ) : (
-                          <>
-                            <span className="material-symbols-outlined text-[20px]">calendar_add_on</span>
-                            <span>Schedule {calendarDurationDays || 30}-Day Events in Google Calendar</span>
-                          </>
-                        )}
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => setShowCalendarModal(false)}
-                        className="px-5 h-12 rounded-full border-2 border-black/60 text-on-surface font-bold text-xs hover:bg-surface-container transition-colors cursor-pointer"
-                      >
-                        Cancel
-                      </button>
-                    </div>
-                  )}
+                  <div className="flex gap-2.5">
+                    <button
+                      type="button"
+                      onClick={handleTriggerGoogleCalendar}
+                      disabled={isSchedulingCalendar}
+                      className="flex-1 h-12 rounded-full bg-[#1A73E8] hover:bg-[#1557b0] text-white font-black text-xs sm:text-sm shadow-md transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
+                    >
+                      {isSchedulingCalendar ? (
+                        <>
+                          <span className="w-4 h-4 rounded-full border-2 border-white border-t-transparent animate-spin"></span>
+                          <span>Scheduling {calendarDurationDays || 30}-Day Events...</span>
+                        </>
+                      ) : (
+                        <>
+                          <span className="material-symbols-outlined text-[20px]">calendar_add_on</span>
+                          <span>Schedule {calendarDurationDays || 30}-Day Events in Google Calendar</span>
+                        </>
+                      )}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setShowCalendarModal(false)}
+                      className="px-5 h-12 rounded-full border-2 border-black/60 text-on-surface font-bold text-xs hover:bg-surface-container transition-colors cursor-pointer"
+                    >
+                      Cancel
+                    </button>
+                  </div>
                 </div>
               </div>
             ) : (
@@ -1997,26 +1954,15 @@ export default function DietLab({ setActiveTab }) {
                       </div>
 
                       <div className="flex items-center gap-2 flex-wrap">
-                        {ev.web_fallback_link && (
+                        {(ev.web_fallback_link || ev.html_link) && (
                           <a
-                            href={ev.web_fallback_link}
+                            href={ev.web_fallback_link || ev.html_link}
                             target="_blank"
                             rel="noopener noreferrer"
                             className="px-3.5 py-1.5 rounded-full bg-[#1A73E8] text-white hover:bg-[#1557b0] text-[11px] font-bold flex items-center gap-1.5 shadow-xs transition-colors"
                           >
                             <span className="material-symbols-outlined text-[14px]">event</span>
-                            <span>Add to My Calendar (1-Click)</span>
-                          </a>
-                        )}
-                        {ev.html_link && ev.mode === "live_google_calendar" && (
-                          <a
-                            href={ev.html_link}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="px-3 py-1.5 rounded-full bg-white border border-black/30 text-on-surface hover:bg-surface-container text-[11px] font-bold flex items-center gap-1"
-                          >
-                            <span>Open API Synced Event</span>
-                            <span className="material-symbols-outlined text-[13px]">open_in_new</span>
+                            <span>Add to Google Calendar (1-Click)</span>
                           </a>
                         )}
                       </div>

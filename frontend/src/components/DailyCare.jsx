@@ -175,15 +175,18 @@ export default function DailyCare({ onOpenSitterPass, setActiveTab }) {
     }
     setIsSchedulingVax(true);
     try {
+      const user = getStoredUser();
       const res = await calendarApi.scheduleVaccine({
         pet_id: activePet?.id || null,
+        pet_name: activePet?.name || "Your Pet",
         vaccine_name: vaxReminder?.vaccineName || vaxReminder?.title || "Rabies Annual Booster",
         due_date: vaxReminder?.dueDate || new Date(Date.now() + 14 * 86400000).toISOString().split('T')[0],
-        clinic_name: activePet?.preferred_clinic || "Veterinary Clinic"
+        clinic_name: activePet?.preferred_clinic || "Veterinary Clinic",
+        user_email: user?.email || null
       });
       if (res?.html_link) {
         setVaxCalendarLink(res.html_link);
-        showToast("✓ Scheduled booster reminder in Google Calendar!");
+        showToast(user?.email ? "✓ Opening Google Calendar & dispatched invite to email!" : "✓ Opening Google Calendar ready to save!");
         window.open(res.html_link, '_blank');
       }
     } catch (err) {

@@ -13,7 +13,11 @@ from google.auth.transport.requests import Request
 
 from app.core.config import settings
 
-SCOPES = ["https://www.googleapis.com/auth/calendar.events"]
+SCOPES = [
+    "openid",
+    "https://www.googleapis.com/auth/userinfo.email",
+    "https://www.googleapis.com/auth/userinfo.profile"
+]
 
 class GoogleCalendarService:
     """
@@ -303,17 +307,27 @@ class GoogleCalendarService:
             except Exception as e:
                 print(f"[!] [Google Calendar API Error: {e}]")
 
-        # 1-Click Web Fallback Link
+        # 1-Click Web Fallback Link & RFC 5545 ICS Generator
         web_link = self.generate_1click_calendar_url(
             title=event_body["summary"],
             details=event_body["description"],
             start_date=due_date
         )
+        ics_text = self.generate_ics_content(
+            title=event_body["summary"],
+            details=event_body["description"],
+            start_date=due_date,
+            location=clinic_name
+        )
         return {
             "success": True,
             "mode": "1click_url",
             "html_link": web_link,
-            "summary": event_body["summary"]
+            "ics_content": ics_text,
+            "summary": event_body["summary"],
+            "details": event_body["description"],
+            "due_date": due_date,
+            "clinic_name": clinic_name
         }
 
     def resolve_timezone(self, service: Optional[Any] = None, user_timezone: Optional[str] = None) -> str:
@@ -519,6 +533,84 @@ class GoogleCalendarService:
                 params["recur"] = f"RRULE:FREQ={recurrence}"
 
         return f"{base_url}?{urllib.parse.urlencode(params)}"
+
+    @staticmethod
+    def generate_ics_content(
+        title: str,
+        details: str,
+        start_date: str,
+        start_time: Optional[str] = None,
+        duration_minutes: int = 30,
+        location: str = "Veterinary Clinic / HawPulse Care",
+        recurrence: Optional[str] = None
+    ) -> str:
+        """
+        Generates RFC 5545 compliant iCalendar (.ics) content.
+        Compatible with Google Calendar, Apple Calendar, Outlook, and Android.
+        Includes 7-day and 1-day advance alarms.
+        """
+        import uuid
+        uid = f"{uuid.uuid4()}@hawpulse.com"
+        now_utc = datetime.utcnow().strftime("%Y%m%dT%H%M%SZ")
+        clean_date = start_date.replace("-", "")
+
+        if start_time:
+            h, m = GoogleCalendarService._parse_hm(start_time)
+            dtstart = f"{clean_date}T{h:02d}{m:02d}00"
+            end_minutes = (h * 60 + m + duration_minutes) % 1440
+            end_h = end_minutes // 60
+            end_m = end_minutes % 60
+            dtend = f"{clean_date}T{end_h:02d}{end_m:02d}00"
+            dtstart_line = f"DTSTART:{dtstart}"
+            dtend_line = f"DTEND:{dtend}"
+        else:
+            dtstart_line = f"DTSTART;VALUE=DATE:{clean_date}"
+            try:
+                d = datetime.strptime(start_date, "%Y-%m-%d").date() + timedelta(days=1)
+                next_date = d.strftime("%Y%m%d")
+            except Exception:
+                next_date = clean_date
+            dtend_line = f"DTEND;VALUE=DATE:{next_date}"
+
+        safe_title = title.replace("\n", " ").replace("\r", "")
+        safe_details = details.replace("\\", "\\\\").replace("\n", "\\n").replace("\r", "")
+        safe_loc = location.replace("\n", " ").replace("\r", "")
+
+        recurrence_line = ""
+        if recurrence:
+            r = recurrence.replace("RRULE:", "").strip()
+            recurrence_line = f"RRULE:{r}\r\n"
+
+        ics_lines = [
+            "BEGIN:VCALENDAR",
+            "VERSION:2.0",
+            "PRODID:-//HawPulse//Pet Health Platform//EN",
+            "CALSCALE:GREGORIAN",
+            "METHOD:REQUEST",
+            "BEGIN:VEVENT",
+            f"UID:{uid}",
+            f"DTSTAMP:{now_utc}",
+            dtstart_line,
+            dtend_line,
+            f"SUMMARY:{safe_title}",
+            f"DESCRIPTION:{safe_details}",
+            f"LOCATION:{safe_loc}",
+            "STATUS:CONFIRMED",
+            recurrence_line.rstrip("\r\n") if recurrence_line else "",
+            "BEGIN:VALARM",
+            "TRIGGER:-P1D",
+            "ACTION:DISPLAY",
+            f"DESCRIPTION:Reminder: {safe_title}",
+            "END:VALARM",
+            "BEGIN:VALARM",
+            "TRIGGER:-P7D",
+            "ACTION:DISPLAY",
+            f"DESCRIPTION:Upcoming: {safe_title}",
+            "END:VALARM",
+            "END:VEVENT",
+            "END:VCALENDAR"
+        ]
+        return "\r\n".join([line for line in ics_lines if line]) + "\r\n"
 
 # Global Singleton
 google_calendar_service = GoogleCalendarService()

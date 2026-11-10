@@ -29,6 +29,7 @@ class ScheduleFeedingRequest(BaseModel):
     evening_time: Optional[str] = "19:30"
     notes: Optional[str] = None
     user_timezone: Optional[str] = None
+    user_email: Optional[str] = None
     duration_days: int = Field(30, ge=1, le=365, description="Number of days to repeat daily feeding reminders (default: 30 days)")
 
 class ScheduleFeedingResponse(BaseModel):
@@ -46,6 +47,7 @@ class ScheduleVaccineRequest(BaseModel):
     due_date: str
     batch_number: Optional[str] = "N/A"
     clinic_name: Optional[str] = "Veterinary Hospital"
+    user_email: Optional[str] = None
 
 class ScheduleVaccineResponse(BaseModel):
     success: bool

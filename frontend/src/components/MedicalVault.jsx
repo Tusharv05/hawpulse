@@ -6,7 +6,8 @@ import {
   diaryApi,
   petsApi,
   getStoredActivePet,
-  setStoredActivePet
+  setStoredActivePet,
+  getStoredUser
 } from '../services/api';
 
 function renderInlineStyles(text) {
@@ -359,21 +360,23 @@ export default function MedicalVault({ setActiveTab }) {
   const handleScheduleBoosterCalendar = async (milestone) => {
     setSchedulingMilestone(milestone.vaccine_name);
     try {
+      const user = getStoredUser();
       const res = await calendarApi.scheduleVaccine({
         pet_id: pet?.id || null,
         pet_name: pet?.name || "Your Pet",
         vaccine_name: milestone.vaccine_name,
         due_date: milestone.due_date || new Date(Date.now() + 14 * 86400000).toISOString().split('T')[0],
         batch_number: milestone.batch_number || "VERIFIED-BOOSTER",
-        clinic_name: prescriptions[0]?.clinic_name || lastUploadedSlip?.clinic || pet?.preferred_clinic || "Veterinary Clinic"
+        clinic_name: prescriptions[0]?.clinic_name || lastUploadedSlip?.clinic || pet?.preferred_clinic || "Veterinary Clinic",
+        user_email: user?.email || null
       });
       if (res?.html_link) {
-        showToast(`🗓️ ${milestone.vaccine_name} reminder scheduled in Google Calendar (7-day & 1-day alarms)!`);
+        showToast(user?.email ? `🗓️ Opening Google Calendar & dispatched .ics invite to ${user.email}!` : `🗓️ ${milestone.vaccine_name} reminder ready to save in Google Calendar!`);
         window.open(res.html_link, '_blank');
       }
     } catch (err) {
       console.warn("Vaccine calendar error:", err);
-      showToast("Could not connect to Google Calendar.");
+      showToast("Could not schedule vaccine in calendar.");
     } finally {
       setSchedulingMilestone(null);
     }

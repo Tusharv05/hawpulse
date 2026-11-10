@@ -1,7 +1,10 @@
 import os
 import smtplib
+import base64
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
+from email.mime.base import MIMEBase
+from email import encoders
 from typing import Dict, Any, Optional
 import httpx
 
@@ -182,5 +185,182 @@ class EmailService:
             "mode": "console_dev",
             "message": f"OTP generated (dev mode). Check server logs for code: {otp}"
         }
+
+    def _render_calendar_html(
+        self,
+        event_title: str,
+        event_details: str,
+        start_date: str,
+        start_time: Optional[str] = None,
+        location: str = "Veterinary Clinic",
+        google_calendar_url: Optional[str] = None
+    ) -> str:
+        time_display = f"{start_date} at {start_time}" if start_time else start_date
+        btn_html = ""
+        if google_calendar_url:
+            btn_html = f"""
+            <div style="text-align: center; margin: 32px 0 24px 0;">
+              <a href="{google_calendar_url}" target="_blank" style="display: inline-block; background: #1A73E8; color: #ffffff; text-decoration: none; font-size: 15px; font-weight: 700; padding: 14px 28px; border-radius: 9999px; box-shadow: 0 4px 12px rgba(26, 115, 232, 0.3);">
+                📅 Save to Google Calendar (1-Click)
+              </a>
+            </div>
+            """
+
+        formatted_details = event_details.replace("\n", "<br>")
+
+        return f"""
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <meta charset="utf-8">
+          <style>
+            body {{ font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: #f8fafc; margin: 0; padding: 24px; }}
+            .container {{ max-width: 540px; margin: 0 auto; background: #ffffff; border: 1px solid #e2e8f0; border-radius: 20px; padding: 32px; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05); }}
+            .logo {{ font-size: 24px; font-weight: 800; color: #0284c7; text-align: center; margin-bottom: 20px; }}
+            .card {{ background: #f0fdf4; border: 1.5px solid #bbf7d0; border-radius: 16px; padding: 20px; margin: 20px 0; }}
+            .card-title {{ font-size: 18px; font-weight: 800; color: #166534; margin-bottom: 12px; }}
+            .info-row {{ font-size: 14px; color: #334155; margin-bottom: 8px; line-height: 1.5; }}
+            .info-label {{ font-weight: 700; color: #0f172a; }}
+            .details-box {{ background: #ffffff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 14px; font-size: 13px; color: #475569; margin-top: 14px; line-height: 1.6; }}
+            .ics-note {{ background: #f8fafc; border-radius: 12px; padding: 14px; font-size: 12px; color: #64748b; text-align: center; margin-top: 20px; line-height: 1.5; border: 1px dashed #cbd5e1; }}
+            .footer {{ border-top: 1px solid #f1f5f9; margin-top: 28px; padding-top: 20px; font-size: 12px; color: #94a3b8; text-align: center; }}
+          </style>
+        </head>
+        <body>
+          <div class="container">
+            <div class="logo">🐾 HawPulse Care Schedule</div>
+            <h2 style="font-size: 20px; font-weight: 800; color: #0f172a; text-align: center; margin: 0 0 8px 0;">New Pet Care Reminder</h2>
+            <p style="font-size: 14px; color: #64748b; text-align: center; margin: 0 0 20px 0;">We've scheduled this event for your companion's wellness.</p>
+
+            <div class="card">
+              <div class="card-title">📌 {event_title}</div>
+              <div class="info-row"><span class="info-label">🗓️ Date:</span> {time_display}</div>
+              <div class="info-row"><span class="info-label">📍 Location:</span> {location}</div>
+              <div class="details-box">
+                {formatted_details}
+              </div>
+            </div>
+
+            {btn_html}
+
+            <div class="ics-note">
+              📎 <strong>Calendar file attached:</strong> An <code>.ics</code> invite is attached to this email. Opening it will automatically add this event to Google Calendar, Apple Calendar, or Outlook.
+            </div>
+
+            <div class="footer">
+              HawPulse AI Pet Wellness Platform • Keeping tails wagging on time
+            </div>
+          </div>
+        </body>
+        </html>
+        """
+
+    async def send_calendar_invite_email(
+        self,
+        to_email: str,
+        event_title: str,
+        event_details: str,
+        start_date: str,
+        start_time: Optional[str] = None,
+        duration_minutes: int = 30,
+        location: str = "Veterinary Clinic",
+        google_calendar_url: Optional[str] = None,
+        ics_content: Optional[str] = None
+    ) -> Dict[str, Any]:
+        """
+        Sends an automated calendar reminder email with:
+        1. Clickable 1-Click Google Calendar CTA Button (zero permissions required)
+        2. Attached .ics iCalendar file (auto-recognized by Gmail, iOS, Mac, Outlook)
+        """
+        html_body = self._render_calendar_html(
+            event_title=event_title,
+            event_details=event_details,
+            start_date=start_date,
+            start_time=start_time,
+            location=location,
+            google_calendar_url=google_calendar_url
+        )
+
+        attachments = []
+        if ics_content:
+            b64_ics = base64.b64encode(ics_content.encode("utf-8")).decode("utf-8")
+            attachments.append({
+                "filename": "hawpulse_reminder.ics",
+                "content": b64_ics
+            })
+
+        # 1. Dispatch via Resend REST API if available
+        if self.resend_api_key.strip():
+            try:
+                sender_email = self.from_email
+                if not sender_email or "@gmail.com" in sender_email or "hawpulse.com" in sender_email:
+                    sender_email = "onboarding@resend.dev"
+
+                payload = {
+                    "from": f"{self.from_name} <{sender_email}>",
+                    "to": [to_email],
+                    "subject": f"🐾 Calendar Reminder: {event_title}",
+                    "html": html_body
+                }
+                if attachments:
+                    payload["attachments"] = attachments
+
+                async with httpx.AsyncClient(timeout=10.0) as client:
+                    resp = await client.post(
+                        "https://api.resend.com/emails",
+                        headers={"Authorization": f"Bearer {self.resend_api_key}"},
+                        json=payload
+                    )
+                if resp.status_code in [200, 201]:
+                    print(f"[SUCCESS] [Resend Calendar Invite Sent] Dispatched .ics reminder to {to_email}")
+                    return {"success": True, "mode": "resend", "message": f"Calendar invite dispatched to {to_email}"}
+                else:
+                    print(f"[!] Resend Calendar API notice ({resp.status_code}): {resp.text}")
+            except Exception as e:
+                print(f"[!] Resend calendar dispatch exception: {e}")
+
+        # 2. Dispatch via SMTP
+        if self.smtp_user.strip() and self.smtp_password.strip():
+            def _send_sync_smtp():
+                msg = MIMEMultipart("mixed")
+                msg["Subject"] = f"🐾 Calendar Reminder: {event_title}"
+                msg["From"] = f"{self.from_name} <{self.from_email}>"
+                msg["To"] = to_email
+
+                alt_part = MIMEMultipart("alternative")
+                plain_text = f"HawPulse Calendar Reminder: {event_title}\nDate: {start_date} {start_time or ''}\n\n{event_details}\n\nAdd to calendar: {google_calendar_url or ''}"
+                alt_part.attach(MIMEText(plain_text, "plain"))
+                alt_part.attach(MIMEText(html_body, "html"))
+                msg.attach(alt_part)
+
+                if ics_content:
+                    part = MIMEBase("text", "calendar", method="REQUEST", name="hawpulse_reminder.ics")
+                    part.set_payload(ics_content.encode("utf-8"))
+                    encoders.encode_base64(part)
+                    part.add_header("Content-Disposition", "attachment; filename=hawpulse_reminder.ics")
+                    msg.attach(part)
+
+                if self.smtp_port == 465:
+                    server = smtplib.SMTP_SSL(self.smtp_host, self.smtp_port, timeout=8.0)
+                else:
+                    server = smtplib.SMTP(self.smtp_host, self.smtp_port, timeout=8.0)
+                    server.starttls()
+
+                server.login(self.smtp_user, self.smtp_password)
+                server.sendmail(self.from_email, [to_email], msg.as_string())
+                server.quit()
+                return True
+
+            try:
+                import asyncio
+                await asyncio.wait_for(asyncio.to_thread(_send_sync_smtp), timeout=10.0)
+                print(f"[SUCCESS] [SMTP Calendar Invite Sent] Dispatched .ics reminder to {to_email}")
+                return {"success": True, "mode": "smtp", "message": f"Calendar invite dispatched to {to_email}"}
+            except Exception as e:
+                print(f"[!] SMTP Calendar Error delivering to {to_email}: {e}")
+
+        # 3. Development Fallback
+        print(f"[DEV CALENDAR INVITE] Would dispatch .ics invite to {to_email}: {event_title}")
+        return {"success": True, "mode": "dev_fallback", "message": f"Dev invite generated for {to_email}"}
 
 email_service = EmailService()

@@ -2,7 +2,7 @@ import re
 import urllib.parse
 from typing import Optional, List
 import httpx
-from fastapi import APIRouter, HTTPException, status, Depends
+from fastapi import APIRouter, HTTPException, status, Depends, BackgroundTasks
 from fastapi.responses import HTMLResponse, RedirectResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
@@ -11,6 +11,7 @@ from app.core.database import get_db
 from app.models.profile import Profile
 from app.core.security import create_access_token
 from app.services.google_calendar_service import google_calendar_service
+from app.services.email_service import email_service
 from app.schemas.calendar import (
     CalendarStatusResponse, ScheduleFeedingRequest,
     ScheduleFeedingResponse, ScheduledEventDetail,
@@ -215,12 +216,10 @@ def _extract_portion(text: Optional[str], default_portion: str) -> str:
     return text.split(":")[0].strip() if ":" in text else default_portion
 
 @router.post("/schedule-feeding", response_model=ScheduleFeedingResponse)
-async def schedule_feeding_events(payload: ScheduleFeedingRequest):
+async def schedule_feeding_events(payload: ScheduleFeedingRequest, background_tasks: BackgroundTasks):
     """
-    Triggers automated Google Calendar scheduling for recurring daily feeding events:
-    - Schedules Morning Feeding (e.g., 08:30 AM) with 10m advance popup notification
-    - Schedules Evening Feeding (e.g., 07:30 PM) with 10m advance popup notification
-    - Automatically syncs into authenticated user's primary Google Calendar (or provides 1-click fallback)
+    Triggers 1-Click Google Calendar links and dispatches .ics calendar invite emails
+    via Resend for recurring daily feeding events (Breakfast & Dinner).
     """
     pet_name = payload.pet_name or "Cooper"
     food = payload.current_food or "Daily Nutrition Formula"
@@ -314,21 +313,35 @@ async def schedule_feeding_events(payload: ScheduleFeedingRequest):
         )
     ]
 
-    if mode == "live_google_calendar":
-        msg = (
-            f"Successfully scheduled daily feeding reminders in Google Calendar for {pet_name} "
-            f"for {dur_days} days! Alarms active at {m_time} and {e_time} daily with 10-minute advance notifications."
+    # If user provided email, dispatch .ics invite via Resend
+    if payload.user_email and "@" in payload.user_email:
+        ics_content_feeding = google_calendar_service.generate_ics_content(
+            title=f"🐾 {pet_name} Feeding Reminders (Breakfast & Dinner)",
+            details=f"HawPulse {dur_days}-Day Meal Routine:\n• Breakfast: {m_time} ({m_portion})\n• Dinner: {e_time} ({e_portion})\n• Food: {food}",
+            start_date=today_str,
+            start_time=m_time,
+            recurrence=f"RRULE:FREQ=DAILY;COUNT={dur_days}"
         )
-    else:
-        msg = (
-            f"Your Google account is not connected for background auto-sync yet. "
-            f"Click 'Add to My Calendar (1-Click)' below for Breakfast & Dinner to save them to your account, "
-            f"or connect your Google account above for automatic background sync."
+        background_tasks.add_task(
+            email_service.send_calendar_invite_email,
+            to_email=payload.user_email.strip(),
+            event_title=f"🐾 {pet_name} Daily Feeding Schedule ({dur_days} Days)",
+            event_details=f"Breakfast: {m_time} ({m_portion})\nDinner: {e_time} ({e_portion})\nFormula: {food}",
+            start_date=today_str,
+            start_time=m_time,
+            location="Home / Meal Station",
+            google_calendar_url=fallback_m,
+            ics_content=ics_content_feeding
         )
+
+    msg = (
+        f"Ready to save to Google Calendar! Click 'Add to Google Calendar' for Breakfast & Dinner below. "
+        + (f"A calendar invite has also been dispatched to {payload.user_email}." if payload.user_email else "")
+    )
 
     return ScheduleFeedingResponse(
         success=True,
-        mode=mode,
+        mode="1click_url",
         message=msg,
         timezone=tz_used,
         duration_days=dur_days,
@@ -336,9 +349,10 @@ async def schedule_feeding_events(payload: ScheduleFeedingRequest):
     )
 
 @router.post("/schedule-vaccine", response_model=ScheduleVaccineResponse)
-async def schedule_vaccine_event(payload: ScheduleVaccineRequest):
+async def schedule_vaccine_event(payload: ScheduleVaccineRequest, background_tasks: BackgroundTasks):
     """
-    Schedules vaccine booster appointment on the user's Google Calendar with 7-day and 1-day advance alarms.
+    Schedules vaccine booster appointment with instant 1-click Google Calendar URL
+    and dispatches .ics calendar invite to user's email via Resend.
     """
     res = google_calendar_service.schedule_vaccine_booster(
         pet_name=payload.pet_name,
@@ -347,11 +361,25 @@ async def schedule_vaccine_event(payload: ScheduleVaccineRequest):
         batch_number=payload.batch_number or "N/A",
         clinic_name=payload.clinic_name or "Veterinary Hospital"
     )
+
+    # If user provided email, dispatch .ics invite via Resend
+    if payload.user_email and "@" in payload.user_email:
+        background_tasks.add_task(
+            email_service.send_calendar_invite_email,
+            to_email=payload.user_email.strip(),
+            event_title=res.get("summary", f"💉 {payload.pet_name}'s {payload.vaccine_name} Booster Due"),
+            event_details=res.get("details", f"Vaccine: {payload.vaccine_name}\nPatient: {payload.pet_name}\nClinic: {payload.clinic_name}"),
+            start_date=payload.due_date,
+            location=payload.clinic_name or "Veterinary Clinic",
+            google_calendar_url=res.get("html_link"),
+            ics_content=res.get("ics_content")
+        )
+
     return ScheduleVaccineResponse(
         success=True,
-        mode=res.get("mode", "1click_url"),
+        mode="1click_url",
         event_id=res.get("event_id"),
         html_link=res.get("html_link", ""),
         summary=res.get("summary", f"💉 {payload.pet_name}'s {payload.vaccine_name} Booster Due"),
-        message=f"Vaccine reminder for {payload.pet_name} scheduled on {payload.due_date} with 7-day and 1-day alarms."
+        message=f"Vaccine reminder for {payload.pet_name} ready to save in Google Calendar."
     )
