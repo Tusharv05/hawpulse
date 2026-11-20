@@ -209,11 +209,18 @@ export default function App() {
     };
   }, []);
 
-  // Clear dummy dev session if previously logged into parent@pawcircle.dev
+  // Validate active session against backend database on startup
   useEffect(() => {
     const user = getStoredUser();
     if (user?.email === 'parent@pawcircle.dev') {
       clearSession();
+      return;
+    }
+    if (getAuthToken()) {
+      authApi.getMe().catch((err) => {
+        console.warn('Session verification notice (deleted/expired user):', err.message);
+        clearSession();
+      });
     }
   }, []);
 

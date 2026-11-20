@@ -92,6 +92,9 @@ async function request(endpoint, options = {}) {
     const data = await response.json().catch(() => null);
 
     if (!response.ok) {
+      if (response.status === 401 || (response.status === 404 && endpoint.includes('/auth/me'))) {
+        clearSession();
+      }
       const errorMsg = data?.detail || data?.message || `HTTP ${response.status}: Request failed`;
       throw new Error(errorMsg);
     }
