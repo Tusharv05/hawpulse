@@ -8,6 +8,7 @@ export default function SignInModal({ isOpen, onClose, onAuthenticated, onSwitch
   const [timerSeconds, setTimerSeconds] = useState(120);
   const [isLoading, setIsLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
+  const [devNotice, setDevNotice] = useState('');
   const [authSuccessData, setAuthSuccessData] = useState(null);
   const [isNewUser, setIsNewUser] = useState(false);
   const inputRefs = useRef([]);
@@ -18,6 +19,7 @@ export default function SignInModal({ isOpen, onClose, onAuthenticated, onSwitch
       setAuthStep('signin');
       setCodeDigits(['', '', '', '', '', '']);
       setErrorMessage('');
+      setDevNotice('');
       setIsLoading(false);
       setIsNewUser(false);
     }
@@ -52,11 +54,17 @@ export default function SignInModal({ isOpen, onClose, onAuthenticated, onSwitch
     }
 
     setErrorMessage('');
+    setDevNotice('');
     setIsLoading(true);
     try {
-      await authApi.requestOtp(cleanEmail);
+      const res = await authApi.requestOtp(cleanEmail);
       setTimerSeconds(120);
-      setCodeDigits(['', '', '', '', '', '']);
+      if (res?.dev_otp) {
+        setCodeDigits(res.dev_otp.split(''));
+        setDevNotice(`🧪 Demo Test Code: ${res.dev_otp} (Resend trial key sends inbox emails to tv124473@gmail.com. We've auto-filled it for you!)`);
+      } else {
+        setCodeDigits(['', '', '', '', '', '']);
+      }
       // Automatically advance to Step 2
       setAuthStep('verify');
       setTimeout(() => {
@@ -343,6 +351,13 @@ export default function SignInModal({ isOpen, onClose, onAuthenticated, onSwitch
                 </p>
               </div>
 
+              {devNotice && (
+                <div className="w-full p-3 rounded-xl bg-primary-container/40 border border-primary/30 text-on-surface text-xs font-semibold text-left flex items-start gap-2">
+                  <span className="material-symbols-outlined text-[18px] text-primary shrink-0">science</span>
+                  <span className="leading-relaxed">{devNotice}</span>
+                </div>
+              )}
+
               {errorMessage && (
                 <div className="w-full p-3 rounded-xl bg-error-container text-on-error-container text-xs font-medium text-left">
                   {errorMessage}
@@ -378,9 +393,15 @@ export default function SignInModal({ isOpen, onClose, onAuthenticated, onSwitch
                     onClick={async () => {
                       setIsLoading(true);
                       try {
-                        await authApi.requestOtp(email.trim());
+                        const res = await authApi.requestOtp(email.trim());
                         setTimerSeconds(120);
-                        setCodeDigits(['', '', '', '', '', '']);
+                        if (res?.dev_otp) {
+                          setCodeDigits(res.dev_otp.split(''));
+                          setDevNotice(`🧪 Demo Test Code: ${res.dev_otp} (Resend trial key sends inbox emails to tv124473@gmail.com. We've auto-filled it for you!)`);
+                        } else {
+                          setCodeDigits(['', '', '', '', '', '']);
+                          setDevNotice('');
+                        }
                         setErrorMessage('');
                       } catch (err) {
                         setErrorMessage(err.message);

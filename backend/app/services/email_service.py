@@ -106,8 +106,11 @@ class EmailService:
     async def send_otp_email(self, to_email: str, otp: str) -> Dict[str, Any]:
         """
         Sends OTP verification code via Resend API or SMTP.
-        Falls back gracefully to console output in development mode.
+        Falls back gracefully with dev/test code preview when trial restrictions apply.
         """
+        is_trial_restricted = False
+        resend_error_text = ""
+
         # 1. Try Resend REST API if key provided
         if self.resend_api_key.strip():
             try:
@@ -129,12 +132,17 @@ class EmailService:
                     print(f"[SUCCESS] [Resend Email Sent] Successfully dispatched OTP to {to_email}")
                     return {"success": True, "mode": "resend", "message": f"OTP sent to {to_email}"}
                 else:
-                    print(f"[!] Resend API error ({resp.status_code}): {resp.text}")
+                    resend_error_text = resp.text
+                    print(f"[!] Resend API notice ({resp.status_code}): {resend_error_text}")
+                    if "only send testing emails to your own email address" in resend_error_text or resp.status_code == 403:
+                        is_trial_restricted = True
             except Exception as e:
                 print(f"[!] Resend dispatch exception: {e}")
 
         # 2. Try SMTP (Gmail, SES, SendGrid, etc.)
-        if self.smtp_user.strip() and self.smtp_password.strip():
+        # Note: Railway blocks outbound TCP ports 25, 465, and 587. Skip SMTP on Railway to avoid 8s timeout.
+        is_railway = bool(os.getenv("RAILWAY_ENVIRONMENT") or os.getenv("RAILWAY_PROJECT_ID"))
+        if not is_railway and self.smtp_user.strip() and self.smtp_password.strip():
             def _send_sync_smtp():
                 msg = MIMEMultipart("alternative")
                 msg["Subject"] = f"Your HawPulse Login Code: {otp}"
@@ -148,7 +156,6 @@ class EmailService:
                 msg.attach(MIMEText(html_text, "html"))
 
                 if self.smtp_port == 465:
-
                     server = smtplib.SMTP_SSL(self.smtp_host, self.smtp_port, timeout=8.0)
                 else:
                     server = smtplib.SMTP(self.smtp_host, self.smtp_port, timeout=8.0)
@@ -161,29 +168,31 @@ class EmailService:
 
             try:
                 import asyncio
-                await asyncio.wait_for(asyncio.to_thread(_send_sync_smtp), timeout=10.0)
+                await asyncio.wait_for(asyncio.to_thread(_send_sync_smtp), timeout=8.0)
                 print(f"[SUCCESS] [SMTP Email Sent] Successfully dispatched verification email to {to_email}")
                 return {"success": True, "mode": "smtp", "message": f"OTP sent to {to_email}"}
             except Exception as e:
                 print(f"[!] SMTP Error delivering to {to_email}: {e}")
 
-        # 3. Development / Sandbox Console Fallback
+        # 3. Fallback: Return dev_otp preview so testers are never blocked
+        warning_msg = None
+        if is_trial_restricted:
+            warning_msg = "Resend trial key sends inbox emails to account owner (tv124473@gmail.com). Test code auto-filled."
+            print(f"[!] {warning_msg}")
+
         print("\n" + "=" * 60)
-        print(" [EMAIL DISPATCH - DEV SANDBOX]")
+        print(" [EMAIL DISPATCH - DEV PREVIEW]")
         print("-" * 60)
         print(f" To:       {to_email}")
-        print(f" Subject:  Your PawCircle Login Code: {otp}")
         print(f" Code:     >> {otp} <<  (Expires in 10 minutes)")
-        print("-" * 60)
-        print(" Notice: To send real emails to inboxes, add to backend/.env:")
-        print("   SMTP_USER=your_email@gmail.com")
-        print("   SMTP_PASSWORD=your_gmail_app_password  (from myaccount.google.com/apppasswords)")
         print("=" * 60 + "\n")
 
         return {
             "success": True,
-            "mode": "console_dev",
-            "message": f"OTP generated (dev mode). Check server logs for code: {otp}"
+            "mode": "dev_preview" if (is_trial_restricted or is_railway) else "console_dev",
+            "message": f"OTP code ready for {to_email}",
+            "dev_otp": otp,
+            "warning": warning_msg
         }
 
     def _render_calendar_html(

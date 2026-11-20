@@ -11,6 +11,8 @@ class RequestOTPResponse(BaseModel):
     email: str
     expires_in_minutes: int = 5
     dispatch_mode: Optional[str] = "email"
+    dev_otp: Optional[str] = None
+    warning: Optional[str] = None
 
 class VerifyOTPRequest(BaseModel):
     email: EmailStr

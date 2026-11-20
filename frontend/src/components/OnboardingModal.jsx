@@ -212,10 +212,15 @@ export default function OnboardingModal({ isOpen, onClose, onFinish, onSwitchToS
     setAuthError('');
     setResendNotice('');
     try {
-      await authApi.requestOtp(authEmail.trim());
+      const res = await authApi.requestOtp(authEmail.trim());
       setIsOtpSent(true);
-      setOtpDigits(['', '', '', '', '', '']); // Clear boxes upon resend
-      setResendNotice('✓ New 6-digit code dispatched! Check inbox.');
+      if (res?.dev_otp) {
+        setOtpDigits(res.dev_otp.split(''));
+        setResendNotice(`🧪 Test Code Auto-filled: ${res.dev_otp} (Resend trial key delivers to tv124473@gmail.com)`);
+      } else {
+        setOtpDigits(['', '', '', '', '', '']); // Clear boxes upon resend
+        setResendNotice('✓ New 6-digit code dispatched! Check inbox.');
+      }
       setTimeout(() => {
         document.getElementById('onboard-otp-0')?.focus();
       }, 100);

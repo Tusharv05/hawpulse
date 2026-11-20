@@ -40,7 +40,9 @@ async def request_otp(payload: RequestOTPRequest):
         message=dispatch_res.get("message", "OTP sent to your email address"),
         email=payload.email,
         expires_in_minutes=10,
-        dispatch_mode=dispatch_res.get("mode", "email")
+        dispatch_mode=dispatch_res.get("mode", "email"),
+        dev_otp=dispatch_res.get("dev_otp"),
+        warning=dispatch_res.get("warning")
     )
 
 @router.post("/verify-otp", response_model=TokenResponse)
