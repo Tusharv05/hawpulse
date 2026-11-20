@@ -55,6 +55,8 @@ class Settings(BaseSettings):
     EMAILS_FROM_EMAIL: str = ""
     EMAILS_FROM_NAME: str = "HawPulse Team"
     RESEND_API_KEY: str = ""
+    BREVO_API_KEY: str = ""
+    BREVO_SENDER_EMAIL: str = "supporthawpulse@gmail.com"
 
     # Real-Time Weather API (WeatherAPI.com)
     WEATHER_API_KEY: str = "d47d0bdda08c4acf9a3100404261309"

@@ -47,20 +47,28 @@ class EmailService:
         return os.getenv("SMTP_PASSWORD") or settings.SMTP_PASSWORD or ""
 
     @property
+    def brevo_api_key(self) -> str:
+        return os.getenv("BREVO_API_KEY") or getattr(settings, "BREVO_API_KEY", "") or ""
+
+    @property
+    def brevo_sender_email(self) -> str:
+        return os.getenv("BREVO_SENDER_EMAIL") or getattr(settings, "BREVO_SENDER_EMAIL", "") or "supporthawpulse@gmail.com"
+
+    @property
     def resend_api_key(self) -> str:
         return os.getenv("RESEND_API_KEY") or getattr(settings, "RESEND_API_KEY", "") or ""
 
     @property
     def from_email(self) -> str:
-        return os.getenv("EMAILS_FROM_EMAIL") or getattr(settings, "EMAILS_FROM_EMAIL", "") or self.smtp_user or "noreply@hawpulse.com"
+        return os.getenv("EMAILS_FROM_EMAIL") or getattr(settings, "EMAILS_FROM_EMAIL", "") or self.brevo_sender_email or self.smtp_user or "supporthawpulse@gmail.com"
 
     @property
     def from_name(self) -> str:
-        return os.getenv("EMAILS_FROM_NAME") or getattr(settings, "EMAILS_FROM_NAME", "HawPulse Team")
+        return os.getenv("EMAILS_FROM_NAME") or getattr(settings, "EMAILS_FROM_NAME", "HawPulse")
 
     def is_configured(self) -> bool:
         """Returns True if real email dispatch credentials are configured."""
-        return bool(self.resend_api_key.strip() or (self.smtp_user.strip() and self.smtp_password.strip()))
+        return bool(self.brevo_api_key.strip() or self.resend_api_key.strip() or (self.smtp_user.strip() and self.smtp_password.strip()))
 
     def _render_otp_html(self, otp: str, email: str) -> str:
         return f"""
@@ -105,13 +113,47 @@ class EmailService:
 
     async def send_otp_email(self, to_email: str, otp: str) -> Dict[str, Any]:
         """
-        Sends OTP verification code via Resend API or SMTP.
+        Sends OTP verification code via Brevo REST API, Resend API, or SMTP.
         Falls back gracefully with dev/test code preview when trial restrictions apply.
         """
         is_trial_restricted = False
         resend_error_text = ""
 
-        # 1. Try Resend REST API if key provided
+        # 1. Try Brevo REST API first (recommended for Railway - port 443 HTTPS & no recipient limits)
+        if self.brevo_api_key.strip():
+            try:
+                sender_email = self.brevo_sender_email.strip() or "supporthawpulse@gmail.com"
+                async with httpx.AsyncClient(timeout=10.0) as client:
+                    resp = await client.post(
+                        "https://api.brevo.com/v3/smtp/email",
+                        headers={
+                            "api-key": self.brevo_api_key.strip(),
+                            "Content-Type": "application/json",
+                            "Accept": "application/json"
+                        },
+                        json={
+                            "sender": {
+                                "name": self.from_name,
+                                "email": sender_email
+                            },
+                            "to": [
+                                {
+                                    "email": to_email
+                                }
+                            ],
+                            "subject": f"🐾 Your HawPulse Login Code: {otp}",
+                            "htmlContent": self._render_otp_html(otp, to_email)
+                        }
+                    )
+                if resp.status_code in [200, 201]:
+                    print(f"[SUCCESS] [Brevo Email Sent] Successfully dispatched OTP to {to_email}")
+                    return {"success": True, "mode": "brevo", "message": f"OTP sent to {to_email}"}
+                else:
+                    print(f"[!] Brevo API notice ({resp.status_code}): {resp.text}")
+            except Exception as e:
+                print(f"[!] Brevo dispatch exception: {e}")
+
+        # 2. Try Resend REST API if key provided
         if self.resend_api_key.strip():
             try:
                 sender_email = self.from_email
@@ -298,7 +340,46 @@ class EmailService:
                 "content": b64_ics
             })
 
-        # 1. Dispatch via Resend REST API if available
+        # 1. Dispatch via Brevo REST API if available (HTTPS port 443, no Railway SMTP block)
+        if self.brevo_api_key.strip():
+            try:
+                sender_email = self.brevo_sender_email.strip() or "supporthawpulse@gmail.com"
+                brevo_payload = {
+                    "sender": {
+                        "name": self.from_name,
+                        "email": sender_email
+                    },
+                    "to": [{"email": to_email}],
+                    "subject": f"🐾 Calendar Reminder: {event_title}",
+                    "htmlContent": html_body
+                }
+                if ics_content:
+                    brevo_payload["attachment"] = [
+                        {
+                            "name": "hawpulse_reminder.ics",
+                            "content": base64.b64encode(ics_content.encode("utf-8")).decode("utf-8")
+                        }
+                    ]
+
+                async with httpx.AsyncClient(timeout=10.0) as client:
+                    resp = await client.post(
+                        "https://api.brevo.com/v3/smtp/email",
+                        headers={
+                            "api-key": self.brevo_api_key.strip(),
+                            "Content-Type": "application/json",
+                            "Accept": "application/json"
+                        },
+                        json=brevo_payload
+                    )
+                if resp.status_code in [200, 201]:
+                    print(f"[SUCCESS] [Brevo Calendar Invite Sent] Dispatched .ics reminder to {to_email}")
+                    return {"success": True, "mode": "brevo", "message": f"Calendar invite dispatched to {to_email}"}
+                else:
+                    print(f"[!] Brevo Calendar API notice ({resp.status_code}): {resp.text}")
+            except Exception as e:
+                print(f"[!] Brevo calendar dispatch exception: {e}")
+
+        # 2. Dispatch via Resend REST API if available
         if self.resend_api_key.strip():
             try:
                 sender_email = self.from_email
