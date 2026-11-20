@@ -1834,34 +1834,52 @@ export default function LandingPage({ onOpenOnboarding, onOpenAuth, setActiveTab
           50% { transform: translateY(-12px) rotate(2deg); }
         }
 
-        /* Marquee */
+        /* Marquee Ribbon (Clean, Horizontal & Fully Responsive) */
         .paw-notebook-landing .mq {
-          background: var(--dk);
-          color: #FFF8E7;
-          transform: rotate(-1.6deg);
-          margin: 0 -3vw;
-          padding: 20px 0;
+          background: #18181B;
+          color: #FFFDF7;
+          transform: none !important;
+          margin: 36px 0 54px 0;
+          width: 100%;
+          padding: 18px 0;
           overflow: hidden;
-          border-block: 3px solid var(--dk);
+          border-top: 2.5px solid var(--ink);
+          border-bottom: 2.5px solid var(--ink);
           position: relative;
           z-index: 2;
-          box-shadow: 0 4px 14px rgba(0,0,0,0.15);
+          box-shadow: 0 4px 18px rgba(0,0,0,0.08);
+          user-select: none;
+        }
+
+        .paw-notebook-landing .mq:hover div {
+          animation-play-state: paused;
         }
 
         .paw-notebook-landing .mq div {
           display: flex;
-          gap: 44px;
+          gap: 36px;
           width: max-content;
-          animation: pcMq 28s linear infinite;
-          font: 600 30px var(--d);
+          animation: pcMq 30s linear infinite;
+          font-family: var(--d);
+          font-size: clamp(16px, 2vw, 22px);
+          font-weight: 600;
+          letter-spacing: 0.02em;
           align-items: center;
           white-space: nowrap;
         }
 
+        .paw-notebook-landing .mq span {
+          display: inline-flex;
+          align-items: center;
+          gap: 8px;
+        }
+
         .paw-notebook-landing .mq span::after {
-          content: "✺";
+          content: "✦";
           color: var(--yel);
-          margin-left: 44px;
+          font-size: 14px;
+          margin-left: 36px;
+          display: inline-block;
         }
 
         @keyframes pcMq {
@@ -1869,7 +1887,7 @@ export default function LandingPage({ onOpenOnboarding, onOpenAuth, setActiveTab
         }
 
         .paw-notebook-landing .mq.rev {
-          transform: rotate(1.2deg);
+          transform: none !important;
           background: var(--yel);
           color: #1A1A1A;
         }
@@ -3685,12 +3703,83 @@ export default function LandingPage({ onOpenOnboarding, onOpenAuth, setActiveTab
           .paw-notebook-landing .fc {
             width: 100%;
             max-width: 340px;
+            transform: none !important;
           }
           .paw-notebook-landing .fc:nth-child(2) {
-            margin-top: 0;
+            margin-top: 0 !important;
           }
           .paw-notebook-landing .dd {
-            opacity: 0.5;
+            display: none !important;
+          }
+        }
+
+        @media (max-width: 768px) {
+          .paw-notebook-landing .mq {
+            margin: 22px 0 36px 0;
+            padding: 13px 0;
+          }
+          .paw-notebook-landing .mq div {
+            gap: 22px;
+            font-size: 15px;
+          }
+          .paw-notebook-landing .mq span::after {
+            margin-left: 22px;
+            font-size: 11px;
+          }
+          .paw-notebook-landing .fan {
+            margin-top: 36px;
+            gap: 20px;
+          }
+          .paw-notebook-landing .fc:hover {
+            transform: translateY(-6px) !important;
+          }
+        }
+
+        @media (max-width: 640px) {
+          .paw-notebook-landing h1 {
+            font-size: clamp(30px, 8.5vw, 44px) !important;
+            line-height: 1.08;
+            margin: 16px 0;
+          }
+          .paw-notebook-landing .lead {
+            font-size: 16px;
+            line-height: 1.5;
+            margin-bottom: 22px;
+          }
+          .paw-notebook-landing .hero {
+            padding: 24px 0 44px;
+            gap: 28px;
+          }
+          .paw-notebook-landing .cta {
+            flex-direction: column;
+            width: 100%;
+            gap: 12px;
+          }
+          .paw-notebook-landing .cta .btn {
+            width: 100%;
+            justify-content: center;
+          }
+          .paw-notebook-landing .tag {
+            font-size: 13px;
+            padding: 6px 14px;
+          }
+          .paw-notebook-landing .c {
+            padding: 22px;
+            border-radius: 24px;
+            min-height: auto;
+          }
+          .paw-notebook-landing .c h3 {
+            font-size: 24px;
+          }
+          .paw-notebook-landing .c p {
+            font-size: 14.5px;
+          }
+          .paw-notebook-landing .deck {
+            max-width: 100%;
+            height: 420px;
+          }
+          .paw-notebook-landing .wrap {
+            padding: 0 16px;
           }
         }
 
@@ -3933,13 +4022,13 @@ export default function LandingPage({ onOpenOnboarding, onOpenAuth, setActiveTab
       <div className="dd" data-s="0.06" style={{ top: '21%', left: '1%', width: 100 }}>
         <svg className="fz" viewBox="0 0 100 70"><use href="#sw" /></svg>
       </div>
-      <div className="dd" data-s="0.07" style={{ top: '27%', right: '4%', width: 58 }}>
+      <div className="dd" data-s="0.07" style={{ top: '18%', right: '6%', width: 52 }}>
         <svg className="fz fly" viewBox="0 0 60 50" style={{ '--bfc': '#FF6B57' }}><use href="#bf" /></svg>
       </div>
       <div className="dd" data-s="0.04" style={{ top: '34%', left: '50%', width: 28 }}>
         <svg className="fz tw" viewBox="0 0 40 40" style={{ color: '#FF6B57' }}><use href="#sp" /></svg>
       </div>
-      <div className="dd" data-s="0.03" style={{ top: '42%', left: '-2%', width: 140 }}>
+      <div className="dd" data-s="0.03" style={{ top: '42%', left: '1%', width: 130 }}>
         <svg className="fz" viewBox="0 0 140 70"><use href="#cl" /></svg>
       </div>
       <div className="dd" data-s="0.05" style={{ top: '55%', right: '2%', width: 110 }}>
@@ -4123,18 +4212,20 @@ export default function LandingPage({ onOpenOnboarding, onOpenAuth, setActiveTab
         {/* ========================================================= */}
         {/* MARQUEE BAND 1                                            */}
         {/* ========================================================= */}
-        <div className="mq">
+        <div className="mq" role="region" aria-label="HawPulse highlights">
           <div>
-            <span>Safer playdates</span>
-            <span>Sitter links</span>
-            <span>Meal plans</span>
-            <span>Instant daily log</span>
-            <span>Vet papers decoded</span>
-            <span>Safer playdates</span>
-            <span>Sitter links</span>
-            <span>Meal plans</span>
-            <span>Instant daily log</span>
-            <span>Vet papers decoded</span>
+            <span>🐾 Safer playdates</span>
+            <span>🦴 Sitter links</span>
+            <span>🥗 AI meal plans</span>
+            <span>⚡ Instant daily log</span>
+            <span>📋 Vet papers decoded</span>
+            <span>❤️ Verified pet parents</span>
+            <span>🐾 Safer playdates</span>
+            <span>🦴 Sitter links</span>
+            <span>🥗 AI meal plans</span>
+            <span>⚡ Instant daily log</span>
+            <span>📋 Vet papers decoded</span>
+            <span>❤️ Verified pet parents</span>
           </div>
         </div>
 

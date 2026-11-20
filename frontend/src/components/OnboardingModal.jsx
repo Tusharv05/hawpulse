@@ -718,7 +718,7 @@ export default function OnboardingModal({ isOpen, onClose, onFinish, onSwitchToS
                         </div>
                       )}
 
-                      <div className="flex gap-2">
+                      <div className="flex gap-1.5 sm:gap-2 justify-center w-full">
                         {otpDigits.map((digit, i) => (
                           <input
                             key={i}
@@ -736,7 +736,7 @@ export default function OnboardingModal({ isOpen, onClose, onFinish, onSwitchToS
                                 document.getElementById(`onboard-otp-${i + 1}`)?.focus();
                               }
                             }}
-                            className="w-10 h-12 rounded-xl bg-surface-container-lowest border border-outline-variant/40 text-center font-bold text-lg text-on-surface focus:outline-none focus:border-on-surface"
+                            className="w-9 h-11 sm:w-10 sm:h-12 rounded-xl bg-surface-container-lowest border border-outline-variant/40 text-center font-bold text-base sm:text-lg text-on-surface focus:outline-none focus:border-on-surface shadow-2xs"
                           />
                         ))}
                       </div>

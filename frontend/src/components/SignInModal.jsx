@@ -366,7 +366,7 @@ export default function SignInModal({ isOpen, onClose, onAuthenticated, onSwitch
 
               {/* 6 Digit Input Boxes with Auto-Advance, Backspace & Paste */}
               <form onSubmit={(e) => { e.preventDefault(); verifyCode(codeDigits); }} className="w-full flex flex-col items-center gap-4 mt-2">
-                <div className="flex gap-2 sm:gap-2.5">
+                <div className="flex gap-1.5 sm:gap-2.5">
                   {codeDigits.map((digit, i) => (
                     <input
                       key={i}
@@ -381,7 +381,7 @@ export default function SignInModal({ isOpen, onClose, onAuthenticated, onSwitch
                       onChange={(e) => handleDigitChange(i, e.target.value)}
                       onKeyDown={(e) => handleKeyDown(i, e.target)}
                       onPaste={handlePaste}
-                      className="w-11 h-14 rounded-xl bg-surface-container-low border border-outline-variant/40 text-center font-headline-sm text-lg font-bold text-on-surface focus:outline-none focus:border-on-surface focus:bg-white transition-all shadow-2xs"
+                      className="w-9 h-12 sm:w-11 sm:h-14 rounded-xl bg-surface-container-low border border-outline-variant/40 text-center font-headline-sm text-base sm:text-lg font-bold text-on-surface focus:outline-none focus:border-on-surface focus:bg-white transition-all shadow-2xs"
                     />
                   ))}
                 </div>
