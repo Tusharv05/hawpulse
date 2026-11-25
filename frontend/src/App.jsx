@@ -13,7 +13,7 @@ import SignInModal from './components/SignInModal';
 import SitterPassModal from './components/SitterPassModal';
 import PrivacyPolicy from './components/PrivacyPolicy';
 import TermsOfUse from './components/TermsOfUse';
-import { setAuthToken, setStoredUser, getStoredUser, clearSession, getAuthToken, petsApi } from './services/api';
+import { setAuthToken, setStoredUser, getStoredUser, clearSession, getAuthToken, petsApi, authApi } from './services/api';
 
 const VALID_TABS = ['landing', 'daily-care', 'diet-lab', 'medical-vault', 'community', 'emergency', 'profile', 'privacy', 'terms'];
 const LANDING_SECTIONS = ['board', 'what', 'how', 'proof', 'radar', 'top'];
